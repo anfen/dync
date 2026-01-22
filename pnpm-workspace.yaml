@@ -1,0 +1,9 @@
+packages:
+  - examples/*
+  - tests
+  - size
+
+nodeLinker: hoisted
+
+overrides:
+  esbuild@<=0.24.2: '>=0.25.0'

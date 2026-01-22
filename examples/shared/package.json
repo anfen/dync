@@ -1,0 +1,14 @@
+{
+  "name": "@examples/shared",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.ts",
+  "dependencies": {
+    "@anfenn/dync": "link:../..",
+    "axios": "1.13.2"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}

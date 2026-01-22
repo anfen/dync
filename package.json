@@ -1,0 +1,171 @@
+{
+  "name": "@anfenn/dync",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Write once, run IndexedDB & SQLite with sync anywhere - React, React Native, Expo, Capacitor, Electron & Node.js",
+  "keywords": [],
+  "license": "MIT",
+  "author": "Adam Fennell",
+  "type": "module",
+  "react-native": "./src/index.native.ts",
+  "exports": {
+    ".": {
+      "react-native": "./src/index.native.ts",
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./dexie": {
+      "import": {
+        "types": "./dist/dexie.d.ts",
+        "default": "./dist/dexie.js"
+      },
+      "require": {
+        "types": "./dist/dexie.d.cts",
+        "default": "./dist/dexie.cjs"
+      }
+    },
+    "./expo-sqlite": {
+      "react-native": "./src/expoSqlite.ts",
+      "import": {
+        "types": "./dist/expoSqlite.d.ts",
+        "default": "./dist/expoSqlite.js"
+      },
+      "require": {
+        "types": "./dist/expoSqlite.d.cts",
+        "default": "./dist/expoSqlite.cjs"
+      }
+    },
+    "./react": {
+      "react-native": "./src/react/index.ts",
+      "import": {
+        "types": "./dist/react/index.d.ts",
+        "default": "./dist/react/index.js"
+      },
+      "require": {
+        "types": "./dist/react/index.d.cts",
+        "default": "./dist/react/index.cjs"
+      }
+    },
+    "./capacitor": {
+      "import": {
+        "types": "./dist/capacitor.d.ts",
+        "default": "./dist/capacitor.js"
+      },
+      "require": {
+        "types": "./dist/capacitor.d.cts",
+        "default": "./dist/capacitor.cjs"
+      }
+    },
+    "./node": {
+      "import": {
+        "types": "./dist/node.d.ts",
+        "default": "./dist/node.js"
+      },
+      "require": {
+        "types": "./dist/node.d.cts",
+        "default": "./dist/node.cjs"
+      }
+    },
+    "./wa-sqlite": {
+      "import": {
+        "types": "./dist/wa-sqlite.d.ts",
+        "default": "./dist/wa-sqlite.js"
+      },
+      "require": {
+        "types": "./dist/wa-sqlite.d.cts",
+        "default": "./dist/wa-sqlite.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "package.json",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "pnpm run format && pnpm run lint && pnpm exec tsc --noEmit && tsup",
+    "build:all": "pnpm run build && pnpm --filter react-capacitor build",
+    "dev": "tsup --watch",
+    "dev:capacitor": "pnpm --filter react-capacitor run dev",
+    "dev:expo:web": "pnpm --filter react-native-expo-sqlite web --clear",
+    "dev:expo:start": "pnpm --filter react-native-expo-sqlite start --clear",
+    "lint": "eslint . --fix \"src/**/*.{js,jsx,ts,tsx,json}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "size": "pnpm --filter size size",
+    "test": "pnpm --filter tests test",
+    "test:all": "pnpm --filter tests test:all",
+    "test:ci": "pnpm --filter tests test:ci",
+    "test:browser:full": "pnpm --filter tests test:browser:full",
+    "reinstall": "find . -name node_modules -type d -prune -exec rm -rf {} + && pnpm install"
+  },
+  "devDependencies": {
+    "@capacitor-community/sqlite": "7.0.2",
+    "@capgo/capacitor-fast-sql": "7.2.13",
+    "@eslint/js": "9.39.2",
+    "@types/better-sqlite3": "7.6.13",
+    "@types/react": "19.1.10",
+    "dexie": "^4.2.1",
+    "eslint": "9.39.2",
+    "expo-crypto": "15.0.8",
+    "expo-sqlite": "16.0.10",
+    "prettier": "3.7.4",
+    "react": "19.1.0",
+    "tsup": "8.5.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.49.0",
+    "@journeyapps/wa-sqlite": "1.4.1"
+  },
+  "peerDependencies": {
+    "@journeyapps/wa-sqlite": ">=1.0.0",
+    "@capacitor-community/sqlite": ">=7.0.0",
+    "@capgo/capacitor-fast-sql": ">=7.0.0",
+    "better-sqlite3": ">=11.0.0",
+    "dexie": ">=4.0.0",
+    "expo-crypto": ">=15.0.0",
+    "expo-sqlite": ">=16.0.0",
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@journeyapps/wa-sqlite": {
+      "optional": true
+    },
+    "@capacitor-community/sqlite": {
+      "optional": true
+    },
+    "@capgo/capacitor-fast-sql": {
+      "optional": true
+    },
+    "better-sqlite3": {
+      "optional": true
+    },
+    "dexie": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "expo-crypto": {
+      "optional": true
+    },
+    "expo-sqlite": {
+      "optional": true
+    }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "unrs-resolver"
+    ]
+  }
+}

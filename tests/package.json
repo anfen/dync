@@ -1,0 +1,43 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitest --reporter=verbose --watch",
+    "test": "cross-env DYNC_INCLUDE_STRESS=false vitest run --reporter=verbose --coverage",
+    "test1": "vitest --reporter=verbose --maxWorkers 1 --coverage __tests__/sync.failures.test.ts:210",
+    "test1file": "vitest --reporter=verbose --maxWorkers 1 --coverage __tests__/sync.failures.test.ts",
+    "test:ci": "vitest run --reporter=verbose",
+    "test:all": "cross-env DYNC_INCLUDE_STRESS=true vitest run --reporter=verbose --coverage",
+    "test:ui": "vitest --reporter=verbose --ui --coverage",
+    "test:browser": "playwright test",
+    "test:browser:ui": "playwright test --ui",
+    "test:browser:quick": "cross-env STRESS_TEST_SIZE=quick playwright test",
+    "test:browser:full": "cross-env STRESS_TEST_SIZE=full playwright test",
+    "test:browser:headed": "playwright test --headed",
+    "browser:dev": "vite --config vite.browser.config.ts"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.0",
+    "@types/lodash.throttle": "4.1.9",
+    "@types/node": "^25.0.2",
+    "@types/react": "~19.1.17",
+    "@types/react-dom": "19.1.11",
+    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/ui": "^4.0.15",
+    "cross-env": "10.1.0",
+    "fake-indexeddb": "6.2.5",
+    "happy-dom": "20.0.11",
+    "lodash.throttle": "4.1.1",
+    "microdiff": "1.5.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "sql.js": "1.13.0",
+    "vitest": "^4.0.15",
+    "@journeyapps/wa-sqlite": "^1.4.1",
+    "@playwright/test": "^1.57.0",
+    "vite": "^7.3.1"
+  }
+}

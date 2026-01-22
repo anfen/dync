@@ -1,0 +1,49 @@
+{
+  "name": "react-capacitor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "postinstall": "cp ../../node_modules/@journeyapps/wa-sqlite/dist/wa-sqlite-async.wasm public/",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "cap:init": "pnpm exec cap init react-capacitor com.example.capacitor --web-dir=dist",
+    "cap:add:ios": "pnpm exec cap add ios",
+    "cap:add:android": "pnpm exec cap add android",
+    "cap:sync": "pnpm run build && pnpm exec cap copy",
+    "cap:open:ios": "pnpm exec cap open ios",
+    "cap:open:android": "pnpm exec cap open android",
+    "cap:run:android": "pnpm run build && pnpm exec cap run android",
+    "start-logcat": "adb logcat -s \"chromium:*\" \"Capacitor:*\" \"Capacitor/Console:*\"",
+    "deploy:android:sim": "bash -c 'TARGET=Pixel_2_XL_API_35 && (emulator -avd $TARGET &) && adb wait-for-device && (adb uninstall com.example.capacitor || true) && npm run cap:sync && npx cap run android --target $TARGET && npm run start-logcat'"
+  },
+  "dependencies": {
+    "@anfenn/dync": "link:../..",
+    "@examples/shared": "link:../shared",
+    "@capacitor-community/sqlite": "^7.0.2",
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/ios": "^7.4.4",
+    "axios": "1.13.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "@journeyapps/wa-sqlite": "^1.4.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.4",
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^25.0.2",
+    "@types/react": "^19.1.17",
+    "@types/react-dom": "^19.1.11",
+    "@vitejs/plugin-react": "^5.1.2",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.25",
+    "globals": "^16.5.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.49.0",
+    "vite": "^7.2.7"
+  }
+}
