@@ -15,6 +15,8 @@ type Store = {
 };
 
 const DATABASE_NAME = 'react-native-expo-sqlite-demo';
+
+// IGNORE: Demo purposes only
 const backend = createMockBackend();
 
 const { db, useDync, useLiveQuery } = makeDync<Store>({

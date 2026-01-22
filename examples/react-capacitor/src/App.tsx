@@ -17,6 +17,8 @@ type Store = {
 
 const DATABASE_NAME = 'react-capacitor-demo';
 const USE_ENCRYPTION = true;
+
+// IGNORE: Demo purposes only
 const backend = createMockBackend();
 
 // Create storage adapter based on platform
@@ -179,11 +181,16 @@ export default function App() {
         window.location.reload();
     };
 
+    const storageType = Capacitor.isNativePlatform() ? 'SQLite' : 'IndexedDB';
+
     return (
         <main className="app-shell">
             <header className="app-header">
                 <div>
-                    <h1>React + IndexedDB + Dync</h1>
+                    <h1>React + {storageType} + Dync</h1>
+                    {USE_ENCRYPTION && Capacitor.isNativePlatform() && (
+                        <span className="eyebrow">🔒 SQLite encryption enabled</span>
+                    )}
                 </div>
                 <button type="button" className="ghost" onClick={handleReset} disabled={!isReady}>
                     Reset

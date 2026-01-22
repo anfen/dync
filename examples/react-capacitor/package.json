@@ -1,7 +1,7 @@
 {
   "name": "react-capacitor",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,10 +12,10 @@
     "cap:init": "pnpm exec cap init react-capacitor com.example.capacitor --web-dir=dist",
     "cap:add:ios": "pnpm exec cap add ios",
     "cap:add:android": "pnpm exec cap add android",
-    "cap:sync": "pnpm run build && pnpm exec cap copy",
     "cap:open:ios": "pnpm exec cap open ios",
     "cap:open:android": "pnpm exec cap open android",
     "cap:run:android": "pnpm run build && pnpm exec cap run android",
+    "cap:run:ios": "pnpm run build && pnpm exec cap run ios",
     "start-logcat": "adb logcat -s \"chromium:*\" \"Capacitor:*\" \"Capacitor/Console:*\"",
     "deploy:android:sim": "bash -c 'TARGET=Pixel_2_XL_API_35 && (emulator -avd $TARGET &) && adb wait-for-device && (adb uninstall com.example.capacitor || true) && npm run cap:sync && npx cap run android --target $TARGET && npm run start-logcat'"
   },

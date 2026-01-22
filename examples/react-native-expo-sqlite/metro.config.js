@@ -18,6 +18,24 @@ config.resolver = {
   // Add WASM support
   assetExts: [...(config.resolver.assetExts || []), 'wasm'],
   sourceExts: [...(config.resolver.sourceExts || [])],
+  // Redirect removed PushNotificationIOS to our shim
+  extraNodeModules: {
+    './Libraries/PushNotificationIOS/PushNotificationIOS': path.resolve(
+      projectRoot,
+      'shims/PushNotificationIOS.js'
+    ),
+  },
+};
+
+// Rewrite require for PushNotificationIOS to use our shim
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === './Libraries/PushNotificationIOS/PushNotificationIOS') {
+    return {
+      filePath: path.resolve(projectRoot, 'shims/PushNotificationIOS.js'),
+      type: 'sourceFile',
+    };
+  }
+  return context.resolveRequest(context, moduleName, platform);
 };
 
 module.exports = config;

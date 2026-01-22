@@ -4,7 +4,8 @@ dist
 coverage
 .DS_Store
 .next/
-.vscode
+.vscode/
+.expo/
 
 # Playwright test artifacts
 tests/playwright-report/

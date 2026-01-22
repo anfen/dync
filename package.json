@@ -1,6 +1,6 @@
 {
   "name": "@anfenn/dync",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "Write once, run IndexedDB & SQLite with sync anywhere - React, React Native, Expo, Capacitor, Electron & Node.js",
   "keywords": [],
@@ -167,5 +167,10 @@
       "esbuild",
       "unrs-resolver"
     ]
+  },
+  "dependencies": {
+    "expo": "~54.0.29",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
   }
 }
