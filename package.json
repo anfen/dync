@@ -1,11 +1,19 @@
 {
   "name": "@anfenn/dync",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": false,
   "description": "Write once, run IndexedDB & SQLite with sync anywhere - React, React Native, Expo, Capacitor, Electron & Node.js",
   "keywords": [],
   "license": "MIT",
   "author": "Adam Fennell",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anfen/dync.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anfen/dync/issues"
+  },
+  "homepage": "https://github.com/anfen/dync#readme",
   "type": "module",
   "react-native": "./src/index.native.ts",
   "exports": {
