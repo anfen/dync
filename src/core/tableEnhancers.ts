@@ -140,7 +140,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
 
             await state.addPendingChange({
                 action: SyncAction.Create,
-                stateKey: tableName,
+                tableName,
                 localId,
                 changes: syncedItem,
                 before: null,
@@ -175,7 +175,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
 
             await state.addPendingChange({
                 action: isUpdate ? SyncAction.Update : SyncAction.Create,
-                stateKey: tableName,
+                tableName,
                 localId,
                 id: existingRecord?.id,
                 changes: syncedItem,
@@ -206,7 +206,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
             if (result > 0) {
                 await state.addPendingChange({
                     action: SyncAction.Update,
-                    stateKey: tableName,
+                    tableName,
                     localId: key,
                     id: record.id,
                     changes: updatedChanges,
@@ -234,7 +234,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
                 deletedLocalId = record._localId;
                 await state.addPendingChange({
                     action: SyncAction.Remove,
-                    stateKey: tableName,
+                    tableName,
                     localId: record._localId,
                     id: record.id,
                     changes: null,
@@ -268,7 +268,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
             for (const syncedItem of syncedItems) {
                 await state.addPendingChange({
                     action: SyncAction.Create,
-                    stateKey: tableName,
+                    tableName,
                     localId: syncedItem._localId,
                     changes: syncedItem,
                     before: null,
@@ -314,7 +314,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
                 const existing = existingMap.get(syncedItem._localId);
                 await state.addPendingChange({
                     action: existing ? SyncAction.Update : SyncAction.Create,
-                    stateKey: tableName,
+                    tableName,
                     localId: syncedItem._localId,
                     id: existing?.id,
                     changes: syncedItem,
@@ -364,7 +364,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
                     updatedKeys.push(record._localId);
                     await state.addPendingChange({
                         action: SyncAction.Update,
-                        stateKey: tableName,
+                        tableName,
                         localId: record._localId,
                         id: record.id,
                         changes,
@@ -398,7 +398,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
                     deletedLocalIds.push(record._localId);
                     await state.addPendingChange({
                         action: SyncAction.Remove,
-                        stateKey: tableName,
+                        tableName,
                         localId: record._localId,
                         id: record.id,
                         changes: null,
@@ -428,7 +428,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
                     deletedLocalIds.push(record._localId);
                     await state.addPendingChange({
                         action: SyncAction.Remove,
-                        stateKey: tableName,
+                        tableName,
                         localId: record._localId,
                         id: record.id,
                         changes: null,

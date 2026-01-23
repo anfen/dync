@@ -67,7 +67,7 @@ const { db, useDync, useLiveQuery } = makeDync<Store>({
         minLogLevel: 'debug',
 
         // Allows e.g. updating child records with this server assigned id
-        onAfterRemoteAdd: (_stateKey: string, _item: SyncedRecord) => {},
+        onAfterRemoteAdd: (_tableName: string, _item: SyncedRecord) => {},
 
         // Allows e.g. notifying the user about missing remote record
         onAfterMissingRemoteRecordDuringUpdate: (_strategy: MissingRemoteRecordStrategy, _item: SyncedRecord) => {},
@@ -101,16 +101,15 @@ export default function App() {
     // Initialize Dync
     useEffect(() => {
         (async () => {
-            try {
-                // IGNORE: Demo purposes only - Seed mock backend with existing synced data
-                await seedBackendMock();
+            // IGNORE: Demo purposes only - Seed mock backend with existing synced data
+            await seedBackendMock();
 
+            const state = db.sync.getState(); // Loads persisted & memory-only sync state (firstLoadDone is persisted to storage)
+            if (!state.firstLoadDone) {
                 await db.sync.startFirstLoad(); // Pass in progress callback if needed
-                await db.sync.enable(true);
-                setIsReady(true);
-            } catch (err) {
-                console.error('[App] Init error:', err);
             }
+            await db.sync.enable(true);
+            setIsReady(true);
         })();
 
         return () => {
@@ -188,9 +187,7 @@ export default function App() {
             <header className="app-header">
                 <div>
                     <h1>React + {storageType} + Dync</h1>
-                    {USE_ENCRYPTION && Capacitor.isNativePlatform() && (
-                        <span className="eyebrow">🔒 SQLite encryption enabled</span>
-                    )}
+                    {USE_ENCRYPTION && Capacitor.isNativePlatform() && <span className="eyebrow">🔒 SQLite encryption enabled</span>}
                 </div>
                 <button type="button" className="ghost" onClick={handleReset} disabled={!isReady}>
                     Reset

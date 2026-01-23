@@ -44,14 +44,14 @@ export async function startFirstLoad(ctx: FirstLoadContext): Promise<void> {
 
     let error: Error | undefined;
 
-    for (const [stateKey, api] of Object.entries(ctx.syncApis)) {
+    for (const [tableName, api] of Object.entries(ctx.syncApis)) {
         if (!api.firstLoad) {
-            ctx.logger.error(`[dync] firstLoad:no-api-function stateKey=${stateKey}`);
+            ctx.logger.error(`[dync] firstLoad:no-api-function tableName=${tableName}`);
             continue;
         }
 
         try {
-            ctx.logger.info(`[dync] firstLoad:start stateKey=${stateKey}`);
+            ctx.logger.info(`[dync] firstLoad:start tableName=${tableName}`);
 
             let lastId: unknown;
             let isEmptyTable = true;
@@ -66,14 +66,14 @@ export async function startFirstLoad(ctx: FirstLoadContext): Promise<void> {
                 batchCount++;
 
                 // Process batch in smaller chunks to manage memory and allow UI updates
-                const { inserted, updated } = await processBatchInChunks(ctx, stateKey, batch, isEmptyTable, lastId === undefined);
+                const { inserted, updated } = await processBatchInChunks(ctx, tableName, batch, isEmptyTable, lastId === undefined);
                 totalInserted += inserted;
                 totalUpdated += updated;
 
                 // Report progress if callback provided
                 if (ctx.onProgress) {
                     ctx.onProgress({
-                        table: stateKey,
+                        table: tableName,
                         inserted: totalInserted,
                         updated: totalUpdated,
                         total: totalInserted + totalUpdated,
@@ -82,7 +82,7 @@ export async function startFirstLoad(ctx: FirstLoadContext): Promise<void> {
 
                 // After first batch, we know if table was empty
                 if (lastId === undefined) {
-                    isEmptyTable = (await ctx.table(stateKey).count()) === batch.length;
+                    isEmptyTable = (await ctx.table(tableName).count()) === batch.length;
                 }
 
                 if (lastId !== undefined && lastId === batch[batch.length - 1].id) {
@@ -97,10 +97,10 @@ export async function startFirstLoad(ctx: FirstLoadContext): Promise<void> {
                 }
             }
 
-            ctx.logger.info(`[dync] firstLoad:done stateKey=${stateKey} inserted=${totalInserted} updated=${totalUpdated}`);
+            ctx.logger.info(`[dync] firstLoad:done tableName=${tableName} inserted=${totalInserted} updated=${totalUpdated}`);
         } catch (err) {
             error = error ?? (err as Error);
-            ctx.logger.error(`[dync] firstLoad:error stateKey=${stateKey}`, err);
+            ctx.logger.error(`[dync] firstLoad:error tableName=${tableName}`, err);
         }
     }
 
@@ -120,15 +120,15 @@ interface BatchResult {
 
 async function processBatchInChunks(
     ctx: FirstLoadBaseContext,
-    stateKey: string,
+    tableName: string,
     batch: RemoteRecord[],
     isEmptyTable: boolean,
     isFirstBatch: boolean,
 ): Promise<BatchResult> {
-    let newest = new Date(ctx.state.getState().lastPulled[stateKey] || 0);
+    let newest = new Date(ctx.state.getState().lastPulled[tableName] || 0);
 
-    return ctx.withTransaction('rw', [stateKey, DYNC_STATE_TABLE], async (tables) => {
-        const txTable = tables[stateKey]!;
+    return ctx.withTransaction('rw', [tableName, DYNC_STATE_TABLE], async (tables) => {
+        const txTable = tables[tableName]!;
 
         // Check if table is empty on first batch
         let tableIsEmpty = isEmptyTable;
@@ -176,7 +176,7 @@ async function processBatchInChunks(
             ...syncState,
             lastPulled: {
                 ...syncState.lastPulled,
-                [stateKey]: newest.toISOString(),
+                [tableName]: newest.toISOString(),
             },
         }));
 
@@ -274,28 +274,28 @@ export async function startFirstLoadBatch(ctx: FirstLoadBatchContext): Promise<v
             batchCount++;
 
             // Process each table's data
-            for (const [stateKey, batch] of Object.entries(result.data)) {
-                if (!ctx.batchSync.syncTables.includes(stateKey)) {
-                    ctx.logger.warn(`[dync] firstLoad:batch:unknown-table stateKey=${stateKey}`);
+            for (const [tableName, batch] of Object.entries(result.data)) {
+                if (!ctx.batchSync.syncTables.includes(tableName)) {
+                    ctx.logger.warn(`[dync] firstLoad:batch:unknown-table tableName=${tableName}`);
                     continue;
                 }
 
                 if (!batch?.length) continue;
 
-                const isFirstBatch = progress[stateKey]!.inserted === 0 && progress[stateKey]!.updated === 0;
-                const isEmptyTable = isFirstBatch && (await ctx.table(stateKey).count()) === 0;
+                const isFirstBatch = progress[tableName]!.inserted === 0 && progress[tableName]!.updated === 0;
+                const isEmptyTable = isFirstBatch && (await ctx.table(tableName).count()) === 0;
 
-                const { inserted, updated } = await processBatchInChunks(ctx, stateKey, batch, isEmptyTable, isFirstBatch);
-                progress[stateKey]!.inserted += inserted;
-                progress[stateKey]!.updated += updated;
+                const { inserted, updated } = await processBatchInChunks(ctx, tableName, batch, isEmptyTable, isFirstBatch);
+                progress[tableName]!.inserted += inserted;
+                progress[tableName]!.updated += updated;
 
                 // Report progress if callback provided
                 if (ctx.onProgress) {
                     ctx.onProgress({
-                        table: stateKey,
-                        inserted: progress[stateKey]!.inserted,
-                        updated: progress[stateKey]!.updated,
-                        total: progress[stateKey]!.inserted + progress[stateKey]!.updated,
+                        table: tableName,
+                        inserted: progress[tableName]!.inserted,
+                        updated: progress[tableName]!.updated,
+                        total: progress[tableName]!.inserted + progress[tableName]!.updated,
                     });
                 }
             }
@@ -314,8 +314,8 @@ export async function startFirstLoadBatch(ctx: FirstLoadBatchContext): Promise<v
         }
 
         // Log completion for each table
-        for (const [stateKey, p] of Object.entries(progress)) {
-            ctx.logger.info(`[dync] firstLoad:batch:done stateKey=${stateKey} inserted=${p.inserted} updated=${p.updated}`);
+        for (const [tableName, p] of Object.entries(progress)) {
+            ctx.logger.info(`[dync] firstLoad:batch:done tableName=${tableName} inserted=${p.inserted} updated=${p.updated}`);
         }
     } catch (err) {
         error = err as Error;

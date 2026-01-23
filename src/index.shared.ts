@@ -492,8 +492,8 @@ class DyncBase<_TStoreMap = Record<string, any>> {
             return;
         }
 
-        await this.withTransaction('rw', [conflict.stateKey, DYNC_STATE_TABLE], async (tables) => {
-            const txTable = tables[conflict.stateKey]!;
+        await this.withTransaction('rw', [conflict.tableName, DYNC_STATE_TABLE], async (tables) => {
+            const txTable = tables[conflict.tableName]!;
             if (!keepLocal) {
                 const item = await txTable.get(localId);
                 if (item) {
@@ -509,7 +509,7 @@ class DyncBase<_TStoreMap = Record<string, any>> {
 
                 await this.state.setState((syncState) => ({
                     ...syncState,
-                    pendingChanges: syncState.pendingChanges.filter((p) => !(p.localId === localId && p.stateKey === conflict.stateKey)),
+                    pendingChanges: syncState.pendingChanges.filter((p) => !(p.localId === localId && p.tableName === conflict.tableName)),
                 }));
             }
 

@@ -97,7 +97,7 @@ export interface BatchSync {
 export type MissingRemoteRecordStrategy = 'ignore' | 'delete-local-record' | 'insert-remote-record';
 export type ConflictResolutionStrategy = 'local-wins' | 'remote-wins' | 'try-shallow-merge';
 
-export type AfterRemoteAddCallback = (stateKey: string, item: SyncedRecord) => void;
+export type AfterRemoteAddCallback = (tableName: string, item: SyncedRecord) => void;
 export type MissingRemoteRecordDuringUpdateCallback = (strategy: MissingRemoteRecordStrategy, item: SyncedRecord) => void;
 
 export interface SyncOptions {
@@ -157,7 +157,7 @@ export enum SyncAction {
 
 export interface PendingChange {
     action: SyncAction;
-    stateKey: string;
+    tableName: string;
     localId: string;
     id?: any;
     version: number;
@@ -167,7 +167,7 @@ export interface PendingChange {
 }
 
 export interface Conflict {
-    stateKey: string;
+    tableName: string;
     fields: FieldConflict[];
 }
 

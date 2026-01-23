@@ -20,6 +20,9 @@ Open [http://localhost:5173](http://localhost:5173) to run in the browser with I
 pnpm install
 pnpm cap:sync
 pnpm exec cap run ios  # or: cap run android
+
+# or for web:
+pnpm dev
 ```
 
 ## What's Inside

@@ -39,7 +39,7 @@ const { db, useDync, useLiveQuery } = makeDync<Store>({
         minLogLevel: 'debug',
 
         // Allows e.g. updating child records with this server assigned id
-        onAfterRemoteAdd: (_stateKey: string, _item: SyncedRecord) => {},
+        onAfterRemoteAdd: (_tableName: string, _item: SyncedRecord) => {},
 
         // Allows e.g. notifying the user about missing remote record
         onAfterMissingRemoteRecordDuringUpdate: (_strategy: MissingRemoteRecordStrategy, _item: SyncedRecord) => {},
@@ -84,7 +84,10 @@ export default function TodoScreen() {
             // IGNORE: Demo purposes only - Seeds mock backend with existing local data
             await seedBackendMock(db, backend);
 
-            await db.sync.startFirstLoad(); // Pass in progress callback if needed
+            const state = db.sync.getState(); // Loads persisted & memory-only sync state (firstLoadDone is persisted to storage)
+            if (!state.firstLoadDone) {
+                await db.sync.startFirstLoad(); // Pass in progress callback if needed
+            }
             await db.sync.enable(true);
             setIsReady(true);
         })();
@@ -317,7 +320,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#121212',
-        paddingTop: 15,
+        paddingTop: 25,
     },
     keyboardAvoid: {
         flex: 1,

@@ -30,10 +30,10 @@ export interface StateHelpers {
     setState(setterOrState: PersistedSyncState | ((state: PersistedSyncState) => Partial<PersistedSyncState>)): Promise<void>;
     setErrorInMemory(error: Error): void;
     addPendingChange(change: Omit<PendingChange, 'version'>): Promise<void>;
-    samePendingVersion(stateKey: string, localId: string, version: number): boolean;
-    removePendingChange(localId: string, stateKey: string): Promise<void>;
-    updatePendingChange(stateKey: string, localId: string, action: SyncAction, id?: any): Promise<void>;
-    setPendingChangeBefore(stateKey: string, localId: string, before: any): Promise<void>;
+    samePendingVersion(tableName: string, localId: string, version: number): boolean;
+    removePendingChange(localId: string, tableName: string): Promise<void>;
+    updatePendingChange(tableName: string, localId: string, action: SyncAction, id?: any): Promise<void>;
+    setPendingChangeBefore(tableName: string, localId: string, before: any): Promise<void>;
     hasConflicts(localId: string): boolean;
     getSyncStatus(): SyncStatus;
     setSyncStatus(status: SyncStatus): void;
@@ -111,7 +111,7 @@ export class StateManager implements StateHelpers {
 
     addPendingChange(change: Omit<PendingChange, 'version'>): Promise<void> {
         const next = clonePersistedState(this.persistedState);
-        const queueItem = next.pendingChanges.find((p) => p.localId === change.localId && p.stateKey === change.stateKey);
+        const queueItem = next.pendingChanges.find((p) => p.localId === change.localId && p.tableName === change.tableName);
 
         const omittedChanges = omitFields(change.changes, LOCAL_ONLY_SYNC_FIELDS);
         const omittedBefore = omitFields(change.before, LOCAL_ONLY_SYNC_FIELDS);
@@ -136,7 +136,7 @@ export class StateManager implements StateHelpers {
             next.pendingChanges = [...next.pendingChanges];
             next.pendingChanges.push({
                 action,
-                stateKey: change.stateKey,
+                tableName: change.tableName,
                 localId: change.localId,
                 id: change.id,
                 version: 1,
@@ -150,20 +150,20 @@ export class StateManager implements StateHelpers {
         return this.persist();
     }
 
-    samePendingVersion(stateKey: string, localId: string, version: number): boolean {
-        return this.persistedState.pendingChanges.find((p) => p.localId === localId && p.stateKey === stateKey)?.version === version;
+    samePendingVersion(tableName: string, localId: string, version: number): boolean {
+        return this.persistedState.pendingChanges.find((p) => p.localId === localId && p.tableName === tableName)?.version === version;
     }
 
-    removePendingChange(localId: string, stateKey: string): Promise<void> {
+    removePendingChange(localId: string, tableName: string): Promise<void> {
         const next = clonePersistedState(this.persistedState);
-        next.pendingChanges = next.pendingChanges.filter((p) => !(p.localId === localId && p.stateKey === stateKey));
+        next.pendingChanges = next.pendingChanges.filter((p) => !(p.localId === localId && p.tableName === tableName));
         this.persistedState = next;
         return this.persist();
     }
 
-    updatePendingChange(stateKey: string, localId: string, action: SyncAction, id?: any): Promise<void> {
+    updatePendingChange(tableName: string, localId: string, action: SyncAction, id?: any): Promise<void> {
         const next = clonePersistedState(this.persistedState);
-        const changeItem = next.pendingChanges.find((p) => p.stateKey === stateKey && p.localId === localId);
+        const changeItem = next.pendingChanges.find((p) => p.tableName === tableName && p.localId === localId);
         if (changeItem) {
             changeItem.action = action;
             if (id) changeItem.id = id;
@@ -173,9 +173,9 @@ export class StateManager implements StateHelpers {
         return Promise.resolve();
     }
 
-    setPendingChangeBefore(stateKey: string, localId: string, before: any): Promise<void> {
+    setPendingChangeBefore(tableName: string, localId: string, before: any): Promise<void> {
         const next = clonePersistedState(this.persistedState);
-        const changeItem = next.pendingChanges.find((p) => p.stateKey === stateKey && p.localId === localId);
+        const changeItem = next.pendingChanges.find((p) => p.tableName === tableName && p.localId === localId);
         if (changeItem) {
             changeItem.before = { ...(changeItem.before ?? {}), ...before };
             this.persistedState = next;
@@ -259,7 +259,7 @@ function cloneConflicts(conflicts: SyncState['conflicts'] | undefined): SyncStat
     const next: NonNullable<SyncState['conflicts']> = {};
     for (const [key, value] of Object.entries(conflicts)) {
         next[key] = {
-            stateKey: value.stateKey,
+            tableName: value.tableName,
             fields: value.fields.map((field) => ({ ...field })),
         };
     }
