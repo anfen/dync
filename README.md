@@ -52,6 +52,7 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
             ...,
             {
                 // Only add an entry here for tables that should be synced
+                // Pseudocode here, see examples for working code
                 items: {
                     add: (item) => fetch('/api/items'),
                     update: (id, changes) => fetch(`/api/items/${id}`),
@@ -69,8 +70,21 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
             ...,
             {
                 syncTables: ['items'], // Only add tables to this array that should be synced
-                push: (changes) => fetch('/api/sync/push'),
-                pull: (since) => fetch(`/api/sync/pull?since=${since}`),
+                push: async (changes) => {
+                    const res = await fetch('/api/sync/push', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(changes),
+                    });
+                    return res.json();
+                },
+                pull: async (since) => {
+                    const params = new URLSearchParams(
+                        Object.entries(since).map(([table, date]) => [table, date.toISOString()])
+                    );
+                    const res = await fetch(`/api/sync/pull?${params}`);
+                    return res.json();
+                },
             },
         );
         ```
