@@ -10,11 +10,11 @@ Start with a Website or PWA using IndexedDB, sync with your existing REST API, a
 
 1. Frictionless upgrade path from an offline-first PWA targeting IndexedDB, to when:
 
-    **A)** Full text search is required on many records (IndexedDB doesn't support this so will do a full table scan in the JS VM, which is slow on many records)
+    **A) Full text search is required on many records** (IndexedDB doesn't support this so will do a full table scan in the JS VM, which is slow on many records)
 
     **_and/or_**
 
-    **B)** Encryption is required (Browsers can't store the encryption key securely)
+    **B) Encryption is required** (Browsers can't store the encryption key securely)
 
     ... you can simply add CapacitorJs or move to React Native which have sqlite & secure enclave storage, and only change the adapter Dync uses
 
