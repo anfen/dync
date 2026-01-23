@@ -81,8 +81,8 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
 
     ```ts
     const { syncState, db } = useDync();
-    syncState.conflicts; // Record<id, Conflict> Use to show user conflicts
-    db.sync.resolveConflict(id, true);
+    syncState.conflicts; // Record<localId, Conflict>
+    db.sync.resolveConflict(localId, true);
     ```
 
 - Optional first load data download before periodic sync is enabled
