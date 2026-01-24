@@ -1,6 +1,6 @@
 import './index.css';
 import { useEffect, useState } from 'react';
-import { createLocalId, SQLiteAdapter, type MissingRemoteRecordStrategy, type SyncedRecord } from '@anfenn/dync';
+import { SQLiteAdapter, type MissingRemoteRecordStrategy, type SyncedRecord } from '@anfenn/dync';
 import { makeDync } from '@anfenn/dync/react';
 import { DexieAdapter } from '@anfenn/dync/dexie';
 import { CapacitorSQLiteDriver } from '@anfenn/dync/capacitor';
@@ -124,17 +124,18 @@ export default function App() {
             const items = await db.todos.toArray(); // toArray() executes the query
             setTodos(items);
         },
-        [],
-        ['todos'],
+        [], // Re-run when variables change
+        ['todos'], // Re-run when todos table changes
     );
 
     // Use Dync to perform CRUD operations
     const handleAdd = async () => {
-        await db.todos.add({
-            _localId: createLocalId(),
+        const _localId = await db.todos.add({
             title: newTitle.trim(),
             completed: false,
         });
+
+        console.log('Added new todo with _localId:', _localId);
         setNewTitle('');
     };
 

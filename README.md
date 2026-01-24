@@ -104,10 +104,14 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
 - Reactive updates when data changes via `useLiveQuery()` React hook:
 
     ```ts
-    useLiveQuery(async (db) => {
-        const items = await db.items.toArray();
-        setItems(items);
-    }, []);
+    useLiveQuery(
+        async (db) => {
+            const items = await db.items.toArray(); // toArray() executes the query
+            setTodos(items);
+        },
+        [], // Re-run when variables change
+        ['items'], // Re-run when tables change
+    );
     ```
 
 - Sqlite schema migration
@@ -173,11 +177,11 @@ Your server records **must** have these fields. If it does but they're named dif
 
 Dync auto-injects these fields into your local table schema:
 
-| Field        | Description                                                                                                                       |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `_localId`   | Stable local identifier, never sent to the server. Ideal for React keys. Generate with `createLocalId()` or use any unique value. |
-| `id`         | Unique identifier (any datatype). Can be assigned by client or server.                                                            |
-| `updated_at` | Assigned from the server's `updated_at` after sync. You may set it optimistically, but it's always overwritten on sync.           |
+| Field        | Description                                                                                                                                  |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `_localId`   | Stable local identifier, never sent to the server. Ideal for React keys. Auto-generated UUID, but can be set manually with any unique value. |
+| `id`         | Unique identifier (any datatype). Can be assigned by client or server.                                                                       |
+| `updated_at` | Assigned from the server's `updated_at` after sync. You may set it optimistically, but it's always overwritten on sync.                      |
 
 Note: `deleted` doesn't exist on the client, as it's removed during sync.
 

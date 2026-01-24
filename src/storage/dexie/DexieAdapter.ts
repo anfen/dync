@@ -3,7 +3,7 @@ import type { StorageAdapter, StorageTable, StorageTransactionContext, Transacti
 import type { StorageSchemaDefinitionOptions } from '../sqlite/types';
 import type { TableSchemaDefinition } from '../sqlite/schema';
 import { DexieQueryContext } from './DexieQueryContext';
-import { DexieStorageTable } from './DexieStorageTable';
+import { DexieTable } from './DexieTable';
 
 export class DexieAdapter implements StorageAdapter {
     readonly type = 'DexieAdapter';
@@ -55,7 +55,7 @@ export class DexieAdapter implements StorageAdapter {
     table<T = any>(name: string): StorageTable<T> {
         if (!this.tableCache.has(name)) {
             const table = this.db.table<T>(name);
-            this.tableCache.set(name, new DexieStorageTable(table));
+            this.tableCache.set(name, new DexieTable(table));
         }
         return this.tableCache.get(name)! as StorageTable<T>;
     }

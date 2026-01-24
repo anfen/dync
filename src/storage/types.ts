@@ -71,23 +71,26 @@ export interface StorageWhereClause<T = any> {
     notEqual(value: any): StorageCollection<T>;
 }
 
+// Item type for add operations - _localId is optional since Dync auto-generates it
+export type AddItem<T> = Omit<T, '_localId'> & { _localId?: string };
+
 export interface StorageTable<T = any> {
     readonly name: string;
     readonly schema: unknown;
     readonly hook: unknown;
-    add(item: T): Promise<unknown>;
-    put(item: T): Promise<unknown>;
-    update(key: unknown, changes: Partial<T>): Promise<number>;
-    delete(key: unknown): Promise<void>;
+    add(item: AddItem<T>): Promise<string>;
+    put(item: T): Promise<string>;
+    update(key: string, changes: Partial<T>): Promise<number>;
+    delete(key: string): Promise<void>;
     clear(): Promise<void>;
-    get(key: unknown): Promise<T | undefined>;
+    get(key: string): Promise<T | undefined>;
     toArray(): Promise<T[]>;
     count(): Promise<number>;
-    bulkAdd(items: T[]): Promise<unknown>;
-    bulkPut(items: T[]): Promise<unknown>;
-    bulkGet(keys: Array<unknown>): Promise<Array<T | undefined>>;
-    bulkUpdate(keysAndChanges: Array<{ key: unknown; changes: Partial<T> }>): Promise<number>;
-    bulkDelete(keys: Array<unknown>): Promise<void>;
+    bulkAdd(items: AddItem<T>[]): Promise<string[]>;
+    bulkPut(items: T[]): Promise<string[]>;
+    bulkGet(keys: string[]): Promise<Array<T | undefined>>;
+    bulkUpdate(keysAndChanges: Array<{ key: string; changes: Partial<T> }>): Promise<number>;
+    bulkDelete(keys: string[]): Promise<void>;
     where(index: string | string[]): StorageWhereClause<T>;
     orderBy(index: string | string[]): StorageCollection<T>;
     reverse(): StorageCollection<T>;
@@ -98,15 +101,15 @@ export interface StorageTable<T = any> {
     jsFilter(predicate: (item: T) => boolean): StorageCollection<T>;
     // The "raw" property exposes the underlying storage operations without Dync sync logic.
     readonly raw: {
-        add(item: T): Promise<unknown>;
-        put(item: T): Promise<unknown>;
-        update(key: unknown, changes: Partial<T>): Promise<number>;
-        delete(key: unknown): Promise<void>;
-        get(key: unknown): Promise<T | undefined>;
-        bulkAdd(items: T[]): Promise<unknown>;
-        bulkPut(items: T[]): Promise<unknown>;
-        bulkUpdate(keysAndChanges: Array<{ key: unknown; changes: Partial<T> }>): Promise<number>;
-        bulkDelete(keys: Array<unknown>): Promise<void>;
+        add(item: T): Promise<string>;
+        put(item: T): Promise<string>;
+        update(key: string, changes: Partial<T>): Promise<number>;
+        delete(key: string): Promise<void>;
+        get(key: string): Promise<T | undefined>;
+        bulkAdd(items: T[]): Promise<string[]>;
+        bulkPut(items: T[]): Promise<string[]>;
+        bulkUpdate(keysAndChanges: Array<{ key: string; changes: Partial<T> }>): Promise<number>;
+        bulkDelete(keys: string[]): Promise<void>;
         clear(): Promise<void>;
     };
 }

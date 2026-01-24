@@ -370,7 +370,7 @@ describe('useLiveQuery with non-synced tables', () => {
         });
 
         // Add
-        let key: unknown;
+        let key: string;
         await act(async () => {
             key = await db.table('localNotes').add({ title: 'Note 1' });
         });

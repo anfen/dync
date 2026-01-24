@@ -181,7 +181,7 @@ export async function runStressTest(
 
         const addItem = async (name: string) => {
             try {
-                const key = await table.add({ _localId: createLocalId(), id: ++id, name });
+                const key = await table.add({ id: ++id, name });
                 const record = key !== undefined ? await table.get(key as any) : null;
                 return record?._localId;
             } catch {

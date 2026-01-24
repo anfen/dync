@@ -5,7 +5,6 @@ import { getAdapterOverrides, storageAdapterMatrix, type StorageAdapterScenario 
 import { installDeterministicUUID, resetDeterministicUUID } from '../helpers/testUtils';
 import { buildSQLiteSyncTableDefinition } from '../helpers/sqliteStructuredSchemas';
 import type { SQLiteTableDefinition, TableSchemaDefinition } from '../../src/storage/sqlite/schema';
-import { createLocalId } from '../../src/index';
 import { LOCAL_PK } from '../../src/types';
 
 installDeterministicUUID();
@@ -130,7 +129,7 @@ describe.each(combinedMatrix)('stress test (%s)', (_label, scenario, syncMode) =
 
         const addItem = async (name: string) => {
             try {
-                const key = await table.add({ _localId: createLocalId(), id: ++id, name });
+                const key = await table.add({ id: ++id, name });
                 const record = key !== undefined ? await table.get(key as any) : null;
                 return record?._localId;
             } catch {

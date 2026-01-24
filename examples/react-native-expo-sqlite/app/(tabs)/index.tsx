@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Switch, ScrollView } from 'react-native';
-import { createLocalId, SQLiteAdapter, type MissingRemoteRecordStrategy, type SyncedRecord } from '@anfenn/dync';
+import { SQLiteAdapter, type MissingRemoteRecordStrategy, type SyncedRecord } from '@anfenn/dync';
 import { ExpoSQLiteDriver } from '@anfenn/dync/expo-sqlite';
 import { makeDync } from '@anfenn/dync/react';
 import { createMockBackend, createCRUDSyncApi, type Todo, ServerTodo } from '@examples/shared';
@@ -102,15 +102,16 @@ export default function TodoScreen() {
     useLiveQuery(async (db) => {
         const items = await db.todos.toArray(); // toArray() executes the query
         setTodos(items);
-    }, []);
+    }); // Re-run when any table changes as no table array here
 
     // Use Dync to perform CRUD operations
     const handleAdd = async () => {
-        await db.todos.add({
-            _localId: createLocalId(),
+        const _localId = await db.todos.add({
             title: newTitle.trim(),
             completed: false,
         });
+
+        console.log('Added new todo with _localId:', _localId);
         setNewTitle('');
     };
 

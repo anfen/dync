@@ -8,7 +8,12 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
     "paths": {
-      "@examples/shared": ["../shared/index.ts"]
+      "@examples/shared": ["../shared/index.ts"],
+      "@anfenn/dync": ["../../src/index.ts"],
+      "@anfenn/dync/capacitor": ["../../src/capacitor.ts"],
+      "@anfenn/dync/dexie": ["../../src/dexie.ts"],
+      "@anfenn/dync/react": ["../../src/react/index.ts"],
+      "@anfenn/dync/wa-sqlite": ["../../src/wa-sqlite.ts"]
     },
 
     /* Bundler mode */
@@ -23,7 +28,6 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },

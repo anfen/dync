@@ -1,4 +1,4 @@
-import type { StorageCollection, StorageTable, StorageWhereClause } from '../types';
+import type { AddItem, StorageCollection, StorageTable, StorageWhereClause } from '../types';
 import { LOCAL_PK } from '../../types';
 import { createLocalId } from '../../helpers';
 import type { MemoryCollectionState, MemoryRecord } from './types';
@@ -12,15 +12,15 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
     readonly primaryKey: unknown = LOCAL_PK;
     readonly hook: unknown = Object.freeze({});
     readonly raw: {
-        add: (item: T) => Promise<unknown>;
-        put: (item: T) => Promise<unknown>;
-        update: (key: unknown, changes: Partial<T>) => Promise<number>;
-        delete: (key: unknown) => Promise<void>;
-        get: (key: unknown) => Promise<T | undefined>;
-        bulkAdd: (items: T[]) => Promise<unknown>;
-        bulkPut: (items: T[]) => Promise<unknown>;
-        bulkUpdate: (keysAndChanges: Array<{ key: unknown; changes: Partial<T> }>) => Promise<number>;
-        bulkDelete: (keys: Array<unknown>) => Promise<void>;
+        add: (item: T) => Promise<string>;
+        put: (item: T) => Promise<string>;
+        update: (key: string, changes: Partial<T>) => Promise<number>;
+        delete: (key: string) => Promise<void>;
+        get: (key: string) => Promise<T | undefined>;
+        bulkAdd: (items: T[]) => Promise<string[]>;
+        bulkPut: (items: T[]) => Promise<string[]>;
+        bulkUpdate: (keysAndChanges: Array<{ key: string; changes: Partial<T> }>) => Promise<number>;
+        bulkDelete: (keys: string[]) => Promise<void>;
         clear: () => Promise<void>;
     };
     private readonly records = new Map<string, T>();
@@ -30,32 +30,32 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
         this.raw = {
             add: async (item: T) => this.baseAdd(item),
             put: async (item: T) => this.basePut(item),
-            update: async (key: unknown, changes: Partial<T>) => this.baseUpdate(key, changes),
-            delete: async (key: unknown) => {
+            update: async (key: string, changes: Partial<T>) => this.baseUpdate(key, changes),
+            delete: async (key: string) => {
                 this.baseDelete(key);
             },
-            get: async (key: unknown) => this.baseGet(key),
+            get: async (key: string) => this.baseGet(key),
             bulkAdd: async (items: T[]) => this.baseBulkAdd(items),
             bulkPut: async (items: T[]) => this.baseBulkPut(items),
-            bulkUpdate: async (keysAndChanges: Array<{ key: unknown; changes: Partial<T> }>) => this.baseBulkUpdate(keysAndChanges),
-            bulkDelete: async (keys: Array<unknown>) => this.baseBulkDelete(keys),
+            bulkUpdate: async (keysAndChanges: Array<{ key: string; changes: Partial<T> }>) => this.baseBulkUpdate(keysAndChanges),
+            bulkDelete: async (keys: string[]) => this.baseBulkDelete(keys),
             clear: async () => this.baseClear(),
         };
     }
 
-    async add(item: T): Promise<unknown> {
-        return this.baseAdd(item);
+    async add(item: AddItem<T>): Promise<string> {
+        return this.baseAdd(item as T);
     }
 
-    async put(item: T): Promise<unknown> {
+    async put(item: T): Promise<string> {
         return this.basePut(item);
     }
 
-    async update(key: unknown, changes: Partial<T>): Promise<number> {
+    async update(key: string, changes: Partial<T>): Promise<number> {
         return this.baseUpdate(key, changes);
     }
 
-    async delete(key: unknown): Promise<void> {
+    async delete(key: string): Promise<void> {
         this.baseDelete(key);
     }
 
@@ -67,7 +67,7 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
         this.records.clear();
     }
 
-    async get(key: unknown): Promise<T | undefined> {
+    async get(key: string): Promise<T | undefined> {
         const stored = this.baseGet(key);
         return stored ? this.cloneRecord(stored) : undefined;
     }
@@ -80,41 +80,41 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
         return this.records.size;
     }
 
-    async bulkAdd(items: T[]): Promise<unknown> {
-        return this.baseBulkAdd(items);
+    async bulkAdd(items: AddItem<T>[]): Promise<string[]> {
+        return this.baseBulkAdd(items as T[]);
     }
 
-    private baseBulkAdd(items: T[]): unknown {
-        let lastKey: unknown = undefined;
+    private baseBulkAdd(items: T[]): string[] {
+        const keys: string[] = [];
         for (let index = 0; index < items.length; index += 1) {
             const item = items[index]!;
-            lastKey = this.baseAdd(item);
+            keys.push(this.baseAdd(item));
         }
-        return lastKey;
+        return keys;
     }
 
-    async bulkPut(items: T[]): Promise<unknown> {
+    async bulkPut(items: T[]): Promise<string[]> {
         return this.baseBulkPut(items);
     }
 
-    private baseBulkPut(items: T[]): unknown {
-        let lastKey: unknown = undefined;
+    private baseBulkPut(items: T[]): string[] {
+        const keys: string[] = [];
         for (let index = 0; index < items.length; index += 1) {
             const item = items[index]!;
-            lastKey = this.basePut(item);
+            keys.push(this.basePut(item));
         }
-        return lastKey;
+        return keys;
     }
 
-    async bulkGet(keys: Array<unknown>): Promise<Array<T | undefined>> {
+    async bulkGet(keys: string[]): Promise<Array<T | undefined>> {
         return Promise.all(keys.map((key) => this.get(key)));
     }
 
-    async bulkUpdate(keysAndChanges: Array<{ key: unknown; changes: Partial<T> }>): Promise<number> {
+    async bulkUpdate(keysAndChanges: Array<{ key: string; changes: Partial<T> }>): Promise<number> {
         return this.baseBulkUpdate(keysAndChanges);
     }
 
-    private baseBulkUpdate(keysAndChanges: Array<{ key: unknown; changes: Partial<T> }>): number {
+    private baseBulkUpdate(keysAndChanges: Array<{ key: string; changes: Partial<T> }>): number {
         let updatedCount = 0;
         for (const { key, changes } of keysAndChanges) {
             const result = this.baseUpdate(key, changes);
@@ -123,11 +123,11 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
         return updatedCount;
     }
 
-    async bulkDelete(keys: Array<unknown>): Promise<void> {
+    async bulkDelete(keys: string[]): Promise<void> {
         this.baseBulkDelete(keys);
     }
 
-    private baseBulkDelete(keys: Array<unknown>): void {
+    private baseBulkDelete(keys: string[]): void {
         for (const key of keys) {
             this.baseDelete(key);
         }
@@ -277,7 +277,7 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
         return primaryKey;
     }
 
-    private baseUpdate(key: unknown, changes: Partial<T>): number {
+    private baseUpdate(key: string, changes: Partial<T>): number {
         const primaryKey = this.resolveKey(key);
         if (!primaryKey) {
             return 0;
@@ -291,14 +291,14 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
         return 1;
     }
 
-    private baseDelete(key: unknown): void {
+    private baseDelete(key: string): void {
         const primaryKey = this.resolveKey(key);
         if (primaryKey) {
             this.records.delete(primaryKey);
         }
     }
 
-    private baseGet(key: unknown): T | undefined {
+    private baseGet(key: string): T | undefined {
         const primaryKey = this.resolveKey(key);
         if (!primaryKey) {
             return undefined;

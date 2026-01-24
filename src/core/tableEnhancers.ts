@@ -1,6 +1,6 @@
 import { createLocalId } from '../helpers';
 import { SyncAction, type MutationEvent, type SyncedRecord } from '../types';
-import type { StorageTable } from '../storage/types';
+import type { AddItem, StorageTable } from '../storage/types';
 import { DYNC_STATE_TABLE, type StateHelpers } from './StateManager';
 import type { WithTransaction } from './types';
 export type EmitMutation = (event: MutationEvent) => void;
@@ -20,8 +20,8 @@ export function wrapWithMutationEmitter<T>(table: StorageTable<T>, tableName: st
     const rawBulkDelete = table.raw.bulkDelete;
     const rawClear = table.raw.clear;
 
-    table.add = async (item: T) => {
-        const result = await rawAdd(item);
+    table.add = async (item: AddItem<T>) => {
+        const result = await rawAdd(item as T);
         emitMutation({ type: 'add', tableName, keys: [result] });
         return result;
     };
@@ -32,7 +32,7 @@ export function wrapWithMutationEmitter<T>(table: StorageTable<T>, tableName: st
         return result;
     };
 
-    table.update = async (key: unknown, changes: Partial<T>) => {
+    table.update = async (key: string, changes: Partial<T>) => {
         const result = await rawUpdate(key, changes);
         if (result > 0) {
             emitMutation({ type: 'update', tableName, keys: [key] });
@@ -40,13 +40,13 @@ export function wrapWithMutationEmitter<T>(table: StorageTable<T>, tableName: st
         return result;
     };
 
-    table.delete = async (key: unknown) => {
+    table.delete = async (key: string) => {
         await rawDelete(key);
         emitMutation({ type: 'delete', tableName, keys: [key] });
     };
 
-    table.bulkAdd = async (items: T[]) => {
-        const result = await rawBulkAdd(items);
+    table.bulkAdd = async (items: AddItem<T>[]) => {
+        const result = await rawBulkAdd(items as T[]);
         if (items.length > 0) {
             emitMutation({ type: 'add', tableName });
         }
@@ -61,7 +61,7 @@ export function wrapWithMutationEmitter<T>(table: StorageTable<T>, tableName: st
         return result;
     };
 
-    table.bulkUpdate = async (keysAndChanges: Array<{ key: unknown; changes: Partial<T> }>) => {
+    table.bulkUpdate = async (keysAndChanges: Array<{ key: string; changes: Partial<T> }>) => {
         const result = await rawBulkUpdate(keysAndChanges);
         if (result > 0) {
             emitMutation({ type: 'update', tableName, keys: keysAndChanges.map((kc) => kc.key) });
@@ -69,7 +69,7 @@ export function wrapWithMutationEmitter<T>(table: StorageTable<T>, tableName: st
         return result;
     };
 
-    table.bulkDelete = async (keys: unknown[]) => {
+    table.bulkDelete = async (keys: string[]) => {
         await rawBulkDelete(keys);
         if (keys.length > 0) {
             emitMutation({ type: 'delete', tableName });
@@ -134,7 +134,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
             updated_at: new Date().toISOString(),
         };
 
-        let result: any;
+        let result!: string;
         await withTransaction('rw', [tableName, DYNC_STATE_TABLE], async () => {
             result = await rawAdd(syncedItem);
 
@@ -162,7 +162,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
             updated_at: new Date().toISOString(),
         };
 
-        let result: any;
+        let result!: string;
         let isUpdate = false;
         let existingRecord: any;
 
@@ -248,8 +248,8 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
         }
     };
 
-    const wrappedBulkAdd = async (items: any[]) => {
-        if (items.length === 0) return;
+    const wrappedBulkAdd = async (items: any[]): Promise<string[]> => {
+        if (items.length === 0) return [];
 
         const now = new Date().toISOString();
         const syncedItems = items.map((item) => {
@@ -261,7 +261,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
             };
         });
 
-        let result: any;
+        let result!: string[];
         await withTransaction('rw', [tableName, DYNC_STATE_TABLE], async () => {
             result = await rawBulkAdd(syncedItems);
 
@@ -281,8 +281,8 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
         return result;
     };
 
-    const wrappedBulkPut = async (items: any[]) => {
-        if (items.length === 0) return;
+    const wrappedBulkPut = async (items: any[]): Promise<string[]> => {
+        if (items.length === 0) return [];
 
         const now = new Date().toISOString();
         const syncedItems = items.map((item) => {
@@ -295,7 +295,7 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
         });
         const localIds = syncedItems.map((i) => i._localId);
 
-        let result: any;
+        let result!: string[];
         await withTransaction('rw', [tableName, DYNC_STATE_TABLE], async (tables) => {
             const txTable = tables[tableName]!;
 

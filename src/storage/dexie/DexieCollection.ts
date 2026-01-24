@@ -1,12 +1,12 @@
-import type { Collection as DexieCollection } from 'dexie';
+import type { Collection } from 'dexie';
 import type { StorageCollection, StorageWhereClause } from '../types';
 import { normalizeIndexName } from './helpers';
-import { DexieStorageWhereClause } from './DexieStorageWhereClause';
+import { DexieWhereClause } from './DexieWhereClause';
 
-export class DexieStorageCollection<T = any> implements StorageCollection<T> {
-    private readonly collection: DexieCollection<T, any, T>;
+export class DexieCollection<T = any> implements StorageCollection<T> {
+    private readonly collection: Collection<T, any, T>;
 
-    constructor(collection: DexieCollection<T, any, T>) {
+    constructor(collection: Collection<T, any, T>) {
         this.collection = collection;
     }
 
@@ -79,31 +79,31 @@ export class DexieStorageCollection<T = any> implements StorageCollection<T> {
     }
 
     distinct(): StorageCollection<T> {
-        return new DexieStorageCollection(this.collection.distinct());
+        return new DexieCollection(this.collection.distinct());
     }
 
     jsFilter(predicate: (item: T) => boolean): StorageCollection<T> {
-        return new DexieStorageCollection(this.collection.filter(predicate));
+        return new DexieCollection(this.collection.filter(predicate));
     }
 
     or(index: string): StorageWhereClause<T> {
-        return new DexieStorageWhereClause(this.collection.or(normalizeIndexName(index)));
+        return new DexieWhereClause(this.collection.or(normalizeIndexName(index)));
     }
 
     clone(props?: Record<string, unknown>): StorageCollection<T> {
-        return new DexieStorageCollection(this.collection.clone(props));
+        return new DexieCollection(this.collection.clone(props));
     }
 
     reverse(): StorageCollection<T> {
-        return new DexieStorageCollection(this.collection.reverse());
+        return new DexieCollection(this.collection.reverse());
     }
 
     offset(offset: number): StorageCollection<T> {
-        return new DexieStorageCollection(this.collection.offset(offset));
+        return new DexieCollection(this.collection.offset(offset));
     }
 
     limit(count: number): StorageCollection<T> {
-        return new DexieStorageCollection(this.collection.limit(count));
+        return new DexieCollection(this.collection.limit(count));
     }
 
     toCollection(): StorageCollection<T> {

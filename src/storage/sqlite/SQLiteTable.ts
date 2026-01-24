@@ -1,4 +1,4 @@
-import type { StorageTable, StorageWhereClause, StorageCollection } from '../types';
+import type { AddItem, StorageTable, StorageWhereClause, StorageCollection } from '../types';
 import { LOCAL_PK } from '../../types';
 import type { SQLiteTableSchemaMetadata, SQLiteIterateEntriesOptions, SQLiteOrderByOptions, SQLiteCollectionState, TableEntry } from './types';
 import { SQLiteAdapter } from './SQLiteAdapter';
@@ -11,15 +11,15 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
     readonly schema: SQLiteTableSchemaMetadata;
     readonly hook: unknown = Object.freeze({});
     readonly raw: {
-        add: (item: T) => Promise<unknown>;
-        put: (item: T) => Promise<unknown>;
-        update: (key: unknown, changes: Partial<T>) => Promise<number>;
-        delete: (key: unknown) => Promise<void>;
-        get: (key: unknown) => Promise<T | undefined>;
-        bulkAdd: (items: T[]) => Promise<unknown>;
-        bulkPut: (items: T[]) => Promise<unknown>;
-        bulkUpdate: (keysAndChanges: Array<{ key: unknown; changes: Partial<T> }>) => Promise<number>;
-        bulkDelete: (keys: Array<unknown>) => Promise<void>;
+        add: (item: T) => Promise<string>;
+        put: (item: T) => Promise<string>;
+        update: (key: string, changes: Partial<T>) => Promise<number>;
+        delete: (key: string) => Promise<void>;
+        get: (key: string) => Promise<T | undefined>;
+        bulkAdd: (items: T[]) => Promise<string[]>;
+        bulkPut: (items: T[]) => Promise<string[]>;
+        bulkUpdate: (keysAndChanges: Array<{ key: string; changes: Partial<T> }>) => Promise<number>;
+        bulkDelete: (keys: string[]) => Promise<void>;
         clear: () => Promise<void>;
     };
 
@@ -54,19 +54,19 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
         });
     }
 
-    async add(item: T): Promise<unknown> {
-        return this.baseAdd(item);
+    async add(item: AddItem<T>): Promise<string> {
+        return this.baseAdd(item as T);
     }
 
-    async put(item: T): Promise<unknown> {
+    async put(item: T): Promise<string> {
         return this.basePut(item);
     }
 
-    async update(key: unknown, changes: Partial<T>): Promise<number> {
+    async update(key: string, changes: Partial<T>): Promise<number> {
         return this.baseUpdate(key, changes);
     }
 
-    async delete(key: unknown): Promise<void> {
+    async delete(key: string): Promise<void> {
         await this.baseDelete(key);
     }
 
@@ -78,7 +78,7 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
         await this.adapter.execute(`DELETE FROM ${quoteIdentifier(this.name)}`);
     }
 
-    async get(key: unknown): Promise<T | undefined> {
+    async get(key: string): Promise<T | undefined> {
         if (!key || typeof key !== 'string') {
             return undefined;
         }
@@ -96,12 +96,12 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
         return Number(rows[0]?.count ?? 0);
     }
 
-    async bulkAdd(items: T[]): Promise<unknown> {
-        return this.baseBulkAdd(items);
+    async bulkAdd(items: AddItem<T>[]): Promise<string[]> {
+        return this.baseBulkAdd(items as T[]);
     }
 
-    private async baseBulkAdd(items: T[]): Promise<unknown> {
-        if (!items.length) return undefined;
+    private async baseBulkAdd(items: T[]): Promise<string[]> {
+        if (!items.length) return [];
 
         const columns = this.columnNames;
         const columnCount = columns.length;
@@ -109,7 +109,7 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
         const maxParamsPerBatch = 500;
         const batchSize = Math.max(1, Math.floor(maxParamsPerBatch / columnCount));
 
-        let lastKey: unknown = undefined;
+        const allKeys: string[] = [];
 
         for (let i = 0; i < items.length; i += batchSize) {
             const batch = items.slice(i, i + batchSize);
@@ -121,32 +121,31 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
 
             for (const record of records) {
                 values.push(...this.extractColumnValues(record));
+                allKeys.push((record as any)[LOCAL_PK]);
             }
 
             await this.adapter.run(
                 `INSERT INTO ${quoteIdentifier(this.name)} (${columns.map((c) => quoteIdentifier(c)).join(', ')}) VALUES ${placeholders}`,
                 values,
             );
-
-            lastKey = (records[records.length - 1] as any)[LOCAL_PK];
         }
 
-        return lastKey;
+        return allKeys;
     }
 
-    async bulkPut(items: T[]): Promise<unknown> {
+    async bulkPut(items: T[]): Promise<string[]> {
         return this.baseBulkPut(items);
     }
 
-    private async baseBulkPut(items: T[]): Promise<unknown> {
-        if (!items.length) return undefined;
+    private async baseBulkPut(items: T[]): Promise<string[]> {
+        if (!items.length) return [];
 
         const columns = this.columnNames;
         const columnCount = columns.length;
         const maxParamsPerBatch = 500;
         const batchSize = Math.max(1, Math.floor(maxParamsPerBatch / columnCount));
 
-        let lastKey: unknown = undefined;
+        const allKeys: string[] = [];
 
         for (let i = 0; i < items.length; i += batchSize) {
             const batch = items.slice(i, i + batchSize);
@@ -158,20 +157,19 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
 
             for (const record of records) {
                 values.push(...this.extractColumnValues(record));
+                allKeys.push((record as any)[LOCAL_PK]);
             }
 
             await this.adapter.run(
                 `INSERT OR REPLACE INTO ${quoteIdentifier(this.name)} (${columns.map((c) => quoteIdentifier(c)).join(', ')}) VALUES ${placeholders}`,
                 values,
             );
-
-            lastKey = (records[records.length - 1] as any)[LOCAL_PK];
         }
 
-        return lastKey;
+        return allKeys;
     }
 
-    async bulkGet(keys: Array<unknown>): Promise<Array<T | undefined>> {
+    async bulkGet(keys: string[]): Promise<Array<T | undefined>> {
         if (!keys.length) return [];
 
         // Use IN clause for bulk lookup
@@ -197,11 +195,11 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
         return keys.map((key) => (key && typeof key === 'string' ? recordMap.get(key) : undefined));
     }
 
-    async bulkUpdate(keysAndChanges: Array<{ key: unknown; changes: Partial<T> }>): Promise<number> {
+    async bulkUpdate(keysAndChanges: Array<{ key: string; changes: Partial<T> }>): Promise<number> {
         return this.baseBulkUpdate(keysAndChanges);
     }
 
-    private async baseBulkUpdate(keysAndChanges: Array<{ key: unknown; changes: Partial<T> }>): Promise<number> {
+    private async baseBulkUpdate(keysAndChanges: Array<{ key: string; changes: Partial<T> }>): Promise<number> {
         if (!keysAndChanges.length) return 0;
 
         let updatedCount = 0;
@@ -212,11 +210,11 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
         return updatedCount;
     }
 
-    async bulkDelete(keys: Array<unknown>): Promise<void> {
+    async bulkDelete(keys: string[]): Promise<void> {
         await this.baseBulkDelete(keys);
     }
 
-    private async baseBulkDelete(keys: Array<unknown>): Promise<void> {
+    private async baseBulkDelete(keys: string[]): Promise<void> {
         if (!keys.length) return;
 
         const validKeys = keys.filter((k) => k && typeof k === 'string');
