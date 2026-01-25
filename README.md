@@ -37,9 +37,9 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
         ```js
         db.query(async (ctx) => {
             if (ctx instanceof DexieQueryContext) {
-                return await ctx.table('items').where('value').equals('dexie-test');
+                return await ctx.table('items').where('value').startsWithIgnoreCase('dexie').toArray();
             } else if (ctx instanceof SqliteQueryContext) {
-                return await ctx.queryRows('SELECT * FROM items WHERE value = ?', ['sqlite-test']);
+                return await ctx.queryRows('SELECT * FROM items WHERE value LIKE ?', ['sqlite%']);
             }
         });
         ```
