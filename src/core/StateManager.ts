@@ -1,15 +1,5 @@
-import { deleteKeyIfEmptyObject, omitFields } from '../helpers';
-import {
-    LOCAL_PK,
-    UPDATED_AT,
-    SyncAction,
-    ApiError,
-    parseApiError,
-    type PendingChange,
-    type PersistedSyncState,
-    type SyncState,
-    type SyncStatus,
-} from '../types';
+import { deleteKeyIfEmptyObject, omitFields, parseApiError } from '../helpers';
+import { LOCAL_PK, UPDATED_AT, SyncAction, ApiError, type PendingChange, type PersistedSyncState, type SyncState, type SyncStatus } from '../types';
 import type { StorageAdapter } from '../storage/types';
 
 const LOCAL_ONLY_SYNC_FIELDS = [LOCAL_PK, UPDATED_AT];

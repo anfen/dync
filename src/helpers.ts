@@ -1,7 +1,56 @@
-import { SyncAction } from './types';
+import { ApiError, SyncAction } from './types';
 import { createLocalId } from './createLocalId';
 
 export { createLocalId };
+
+export function parseApiError(error: any): ApiError {
+    if (error instanceof ApiError) {
+        return error;
+    }
+
+    if (typeof error === 'string') {
+        return new ApiError(error, false);
+    }
+
+    return new ApiError(error.message, isNetworkError(error), error);
+}
+
+/**
+ * Detects if an error is a network-level failure from common HTTP libraries.
+ * Supports: fetch, axios, Apollo GraphQL, and generic network errors.
+ */
+function isNetworkError(error: any): boolean {
+    const message = error.message?.toLowerCase() ?? '';
+    const name = error.name;
+
+    // fetch: throws TypeError on network failure
+    if (name === 'TypeError' && (message.includes('failed to fetch') || message.includes('network request failed'))) {
+        return true;
+    }
+
+    // axios: sets error.code for network issues
+    const code = error.code;
+    if (code === 'ERR_NETWORK' || code === 'ECONNABORTED' || code === 'ENOTFOUND' || code === 'ECONNREFUSED') {
+        return true;
+    }
+
+    // axios: no response means request never reached server
+    if (error.isAxiosError && error.response === undefined) {
+        return true;
+    }
+
+    // Apollo GraphQL: network error wrapper
+    if (name === 'ApolloError' && error.networkError) {
+        return true;
+    }
+
+    // Generic network error messages
+    if (message.includes('network error') || message.includes('networkerror')) {
+        return true;
+    }
+
+    return false;
+}
 
 export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
     return new Promise((resolve) => {

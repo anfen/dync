@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createLocalId, changeKeysTo, changeKeysFrom, orderFor, sleep, omitFields, addOnSetDo, deleteKeyIfEmptyObject } from '../../src/helpers';
-import { SyncAction, ApiError, parseApiError } from '../../src/types';
+import { createLocalId, changeKeysTo, changeKeysFrom, orderFor, sleep, omitFields, addOnSetDo, deleteKeyIfEmptyObject, parseApiError } from '../../src/helpers';
+import { SyncAction, ApiError } from '../../src/types';
 import { Dync, MemoryAdapter } from '../../src/index';
 
 // ============================================================================
