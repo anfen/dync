@@ -214,7 +214,6 @@ export class SQLiteCollection<T = any> implements StorageCollection<T> {
     }
 
     async sortBy(key: string): Promise<T[]> {
-        // Use native SQL ORDER BY instead of JS sorting
         const entries = await this.executeQuery({
             orderByOverride: { index: key, direction: 'asc' },
         });
