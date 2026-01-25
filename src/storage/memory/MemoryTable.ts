@@ -10,7 +10,6 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
     readonly name: string;
     readonly schema: unknown = undefined;
     readonly primaryKey: unknown = LOCAL_PK;
-    readonly hook: unknown = Object.freeze({});
     readonly raw: {
         add: (item: T) => Promise<string>;
         put: (item: T) => Promise<string>;
@@ -133,7 +132,7 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
         }
     }
 
-    where(index: string | string[]): StorageWhereClause<T> {
+    where(index: string): StorageWhereClause<T> {
         return this.createWhereClause(index);
     }
 
@@ -153,10 +152,6 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
 
     limit(count: number): StorageCollection<T> {
         return this.createCollection({ limit: count });
-    }
-
-    mapToClass(_ctor: new (...args: any[]) => any): StorageTable<T> {
-        return this;
     }
 
     async each(callback: (item: T) => void | Promise<void>): Promise<void> {
@@ -187,8 +182,8 @@ export class MemoryTable<T extends MemoryRecord = MemoryRecord> implements Stora
         });
     }
 
-    createWhereClause(index: string | string[], baseCollection?: MemoryCollection<T>): MemoryWhereClause<T> {
-        return new MemoryWhereClause(this, index, baseCollection);
+    createWhereClause(column: string, baseCollection?: MemoryCollection<T>): MemoryWhereClause<T> {
+        return new MemoryWhereClause(this, column, baseCollection);
     }
 
     entries(): Array<[string, T]> {

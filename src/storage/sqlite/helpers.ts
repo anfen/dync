@@ -59,12 +59,6 @@ const buildCondition = (condition: SQLiteCondition): BuiltCondition => {
         return { clause: `(${subClauses.join(' OR ')})`, parameters: subParams };
     }
 
-    // Handle compound equals (multiple columns ANDed together)
-    if (condition.type === 'compoundEquals') {
-        const clauses = condition.columns.map((col) => `${quoteIdentifier(col)} = ?`);
-        return { clause: `(${clauses.join(' AND ')})`, parameters: condition.values };
-    }
-
     const col = quoteIdentifier(condition.column);
 
     switch (condition.type) {

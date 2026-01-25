@@ -69,12 +69,6 @@ export interface SQLiteConditionOr {
     conditions: SQLiteCondition[];
 }
 
-export interface SQLiteConditionCompoundEquals {
-    type: 'compoundEquals';
-    columns: string[];
-    values: unknown[];
-}
-
 export type SQLiteCondition =
     | SQLiteConditionEquals
     | SQLiteConditionComparison
@@ -82,8 +76,7 @@ export type SQLiteCondition =
     | SQLiteConditionIn
     | SQLiteConditionNotIn
     | SQLiteConditionLike
-    | SQLiteConditionOr
-    | SQLiteConditionCompoundEquals;
+    | SQLiteConditionOr;
 
 export interface SQLiteCollectionState<T> {
     /** SQL-expressible WHERE conditions (ANDed together) */

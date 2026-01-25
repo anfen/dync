@@ -77,7 +77,6 @@ export type AddItem<T> = Omit<T, '_localId'> & { _localId?: string };
 export interface StorageTable<T = any> {
     readonly name: string;
     readonly schema: unknown;
-    readonly hook: unknown;
     add(item: AddItem<T>): Promise<string>;
     put(item: T): Promise<string>;
     update(key: string, changes: Partial<T>): Promise<number>;
@@ -91,12 +90,11 @@ export interface StorageTable<T = any> {
     bulkGet(keys: string[]): Promise<Array<T | undefined>>;
     bulkUpdate(keysAndChanges: Array<{ key: string; changes: Partial<T> }>): Promise<number>;
     bulkDelete(keys: string[]): Promise<void>;
-    where(index: string | string[]): StorageWhereClause<T>;
+    where(index: string): StorageWhereClause<T>;
     orderBy(index: string | string[]): StorageCollection<T>;
     reverse(): StorageCollection<T>;
     offset(offset: number): StorageCollection<T>;
     limit(count: number): StorageCollection<T>;
-    mapToClass(ctor: new (...args: any[]) => any): StorageTable<T>;
     each(callback: (item: T) => void | Promise<void>): Promise<void>;
     jsFilter(predicate: (item: T) => boolean): StorageCollection<T>;
     // The "raw" property exposes the underlying storage operations without Dync sync logic.

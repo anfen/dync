@@ -1481,69 +1481,10 @@ describe('Dync Query API', () => {
             });
 
             // ================================================================
-            // Compound Index Queries (Native SQL for SQLite)
+            // Native SQL Features
             // ================================================================
 
-            describe('Compound Index Queries', () => {
-                // Note: Dexie requires compound indexes to be defined in the schema,
-                // so these tests only work for SQLite and Memory adapters.
-                // Dexie will throw 'KeyPath not indexed' error for undefined compound indexes.
-
-                it('finds records with equals() on compound index', async () => {
-                    // Skip for Dexie - compound indexes must be predefined in schema
-                    if (scenario.key === 'dexie') {
-                        return;
-                    }
-
-                    const db = await createDb();
-                    const table = db.table('todos');
-
-                    await table.bulkAdd([
-                        createTodo({ title: 'Task 1', category: 'work', priority: 1 }),
-                        createTodo({ title: 'Task 2', category: 'work', priority: 2 }),
-                        createTodo({ title: 'Task 3', category: 'personal', priority: 1 }),
-                    ]);
-
-                    // Query with compound index [category, priority]
-                    const results = await table.where(['category', 'priority']).equals(['work', 1]).toArray();
-
-                    expect(results).toHaveLength(1);
-                    expect(results[0]!.title).toBe('Task 1');
-
-                    await db.close();
-                });
-
-                it('finds records with anyOf() on compound index', async () => {
-                    // Skip for Dexie - compound indexes must be predefined in schema
-                    if (scenario.key === 'dexie') {
-                        return;
-                    }
-
-                    const db = await createDb();
-                    const table = db.table('todos');
-
-                    await table.bulkAdd([
-                        createTodo({ title: 'Task 1', category: 'work', priority: 1 }),
-                        createTodo({ title: 'Task 2', category: 'work', priority: 2 }),
-                        createTodo({ title: 'Task 3', category: 'personal', priority: 1 }),
-                        createTodo({ title: 'Task 4', category: 'personal', priority: 3 }),
-                    ]);
-
-                    // Query multiple compound values
-                    const results = await table
-                        .where(['category', 'priority'])
-                        .anyOf([
-                            ['work', 1],
-                            ['personal', 3],
-                        ])
-                        .toArray();
-
-                    expect(results).toHaveLength(2);
-                    expect(results.map((r) => r.title).sort()).toEqual(['Task 1', 'Task 4']);
-
-                    await db.close();
-                });
-
+            describe('Native SQL Features', () => {
                 it('uses native SQL DISTINCT', async () => {
                     const db = await createDb();
                     const table = db.table('todos');

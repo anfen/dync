@@ -5,12 +5,12 @@ import type { MemoryCollection } from './MemoryCollection';
 
 export class MemoryWhereClause<T extends MemoryRecord = MemoryRecord> implements StorageWhereClause<T> {
     private readonly table: MemoryTable<T>;
-    private readonly index: string | string[];
+    private readonly column: string;
     private readonly baseCollection?: MemoryCollection<T>;
 
-    constructor(table: MemoryTable<T>, index: string | string[], baseCollection?: MemoryCollection<T>) {
+    constructor(table: MemoryTable<T>, column: string, baseCollection?: MemoryCollection<T>) {
         this.table = table;
-        this.index = index;
+        this.column = column;
         this.baseCollection = baseCollection;
     }
 
@@ -116,10 +116,10 @@ export class MemoryWhereClause<T extends MemoryRecord = MemoryRecord> implements
     }
 
     private createCollection(predicate: (indexValue: unknown) => boolean): StorageCollection<T> {
-        const condition = (record: T, _key: string): boolean => predicate(this.table.getIndexValue(record, this.index));
+        const condition = (record: T, _key: string): boolean => predicate(this.table.getIndexValue(record, this.column));
         if (this.baseCollection) {
             const combined = (record: T, key: string): boolean =>
-                this.baseCollection!.matches(record, key) || predicate(this.table.getIndexValue(record, this.index));
+                this.baseCollection!.matches(record, key) || predicate(this.table.getIndexValue(record, this.column));
             return this.table.createCollectionFromPredicate(combined, this.baseCollection);
         }
         return this.table.createCollectionFromPredicate(condition);

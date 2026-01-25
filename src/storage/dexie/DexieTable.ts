@@ -8,7 +8,6 @@ export class DexieTable<T = any> implements StorageTable<T> {
     readonly name: string;
     readonly schema: unknown;
     readonly primaryKey: unknown;
-    readonly hook: unknown;
     readonly raw = Object.freeze({
         add: (item: T): Promise<string> => this.table.add(item) as Promise<string>,
         put: (item: T): Promise<string> => this.table.put(item) as Promise<string>,
@@ -29,7 +28,6 @@ export class DexieTable<T = any> implements StorageTable<T> {
         this.name = table.name;
         this.schema = table.schema;
         this.primaryKey = table.schema?.primKey;
-        this.hook = table.hook;
     }
 
     add(item: AddItem<T>): Promise<string> {
@@ -84,8 +82,8 @@ export class DexieTable<T = any> implements StorageTable<T> {
         return this.table.bulkDelete(keys as any);
     }
 
-    where(index: string | string[]): StorageWhereClause<T> {
-        return new DexieWhereClause(this.table.where(normalizeIndexName(index)));
+    where(index: string): StorageWhereClause<T> {
+        return new DexieWhereClause(this.table.where(index));
     }
 
     orderBy(index: string | string[]): StorageCollection<T> {
@@ -102,11 +100,6 @@ export class DexieTable<T = any> implements StorageTable<T> {
 
     limit(count: number): StorageCollection<T> {
         return new DexieCollection(this.table.limit(count));
-    }
-
-    mapToClass(ctor: new (...args: any[]) => any): StorageTable<T> {
-        this.table.mapToClass(ctor as any);
-        return this;
     }
 
     async each(callback: (item: T) => void | Promise<void>): Promise<void> {

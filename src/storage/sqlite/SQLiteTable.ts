@@ -9,7 +9,6 @@ import { cloneValue, createDefaultState, normalizeComparableValue, quoteIdentifi
 export class SQLiteTable<T = any> implements StorageTable<T> {
     readonly name: string;
     readonly schema: SQLiteTableSchemaMetadata;
-    readonly hook: unknown = Object.freeze({});
     readonly raw: {
         add: (item: T) => Promise<string>;
         put: (item: T) => Promise<string>;
@@ -224,7 +223,7 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
         await this.adapter.run(`DELETE FROM ${quoteIdentifier(this.name)} WHERE ${quoteIdentifier(LOCAL_PK)} IN (${placeholders})`, validKeys);
     }
 
-    where(index: string | string[]): StorageWhereClause<T> {
+    where(index: string): StorageWhereClause<T> {
         return this.createWhereClause(index);
     }
 
@@ -244,10 +243,6 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
 
     limit(count: number): StorageCollection<T> {
         return this.createCollection({ limit: count });
-    }
-
-    mapToClass(_ctor: new (...args: any[]) => any): StorageTable<T> {
-        return this;
     }
 
     async each(callback: (item: T) => void | Promise<void>): Promise<void> {
@@ -277,8 +272,8 @@ export class SQLiteTable<T = any> implements StorageTable<T> {
         });
     }
 
-    createWhereClause(index: string | string[], baseCollection?: SQLiteCollection<T>): SQLiteWhereClause<T> {
-        return new SQLiteWhereClause(this, index, baseCollection);
+    createWhereClause(column: string, baseCollection?: SQLiteCollection<T>): SQLiteWhereClause<T> {
+        return new SQLiteWhereClause(this, column, baseCollection);
     }
 
     async *iterateEntries(options?: SQLiteIterateEntriesOptions): AsyncGenerator<TableEntry<T>> {
