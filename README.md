@@ -8,7 +8,8 @@ Start with a Website or PWA using IndexedDB, sync with your existing REST API, a
 
 ## Why Dync?
 
-1. Frictionless upgrade path from an offline-first PWA targeting IndexedDB, to when:
+1. Target IndexedDB as a PWA, and SQLite in the AppStores, with no code changes and native storage performance
+2. Frictionless upgrade path from an offline-first PWA targeting IndexedDB, to when:
 
     **A) Substring search is required on many records** (IndexedDB doesn't support this so will do a full table scan in the JS VM, which is both slow and will spike memory)
 
@@ -18,7 +19,6 @@ Start with a Website or PWA using IndexedDB, sync with your existing REST API, a
 
     ... you can simply add CapacitorJs or move to React Native which have sqlite & secure enclave storage, and only change the adapter Dync uses
 
-2. Write once, run anywhere (Web, CapacitorJs, React Native, Electron & Node) with no code changes and native storage performance
 3. Completely free and open source
 
 <br>See first-hand in this fully working example: [examples/react-capacitor](examples/react-capacitor)
