@@ -14,20 +14,21 @@ export class SQLiteCollection<T = any> implements StorageCollection<T> {
         this.state = {
             ...base,
             ...state,
-            sqlConditions: state?.sqlConditions ?? base.sqlConditions,
+            orGroups: state?.orGroups ?? base.orGroups,
             jsPredicate: state?.jsPredicate,
         };
     }
 
     getState(): SQLiteCollectionState<T> {
-        return { ...this.state, sqlConditions: [...this.state.sqlConditions] };
+        return { ...this.state, orGroups: this.state.orGroups.map((g) => [...g]) };
     }
 
-    // Add a SQL-expressible condition to this collection
+    // Add a SQL-expressible condition to the current OR group
     addSqlCondition(condition: SQLiteCondition): SQLiteCollection<T> {
+        const newGroups = this.state.orGroups.map((g, i) => (i === this.state.orGroups.length - 1 ? [...g, condition] : g));
         return new SQLiteCollection(this.table, {
             ...this.state,
-            sqlConditions: [...this.state.sqlConditions, condition],
+            orGroups: newGroups,
         });
     }
 
@@ -35,7 +36,7 @@ export class SQLiteCollection<T = any> implements StorageCollection<T> {
         return new SQLiteCollection(this.table, {
             ...this.state,
             ...overrides,
-            sqlConditions: overrides?.sqlConditions ?? this.state.sqlConditions,
+            orGroups: overrides?.orGroups ?? this.state.orGroups,
             jsPredicate: overrides?.jsPredicate !== undefined ? overrides.jsPredicate : this.state.jsPredicate,
         });
     }
@@ -73,7 +74,7 @@ export class SQLiteCollection<T = any> implements StorageCollection<T> {
             orderByOverride?: { index: string | string[]; direction: 'asc' | 'desc' };
         } = {},
     ): Promise<TableEntry<T>[]> {
-        const { whereClause, parameters } = buildWhereClause(this.state.sqlConditions);
+        const { whereClause, parameters } = buildWhereClause(this.state.orGroups);
         const ordering = options.orderByOverride ?? this.resolveOrdering();
         const cloneValues = options.clone !== false;
         const hasJsFilter = this.hasJsPredicate();
@@ -160,7 +161,7 @@ export class SQLiteCollection<T = any> implements StorageCollection<T> {
     async keys(): Promise<unknown[]> {
         // Optimization: use native SQL when no JS filtering needed
         if (!this.hasJsPredicate()) {
-            const { whereClause, parameters } = buildWhereClause(this.state.sqlConditions);
+            const { whereClause, parameters } = buildWhereClause(this.state.orGroups);
             const ordering = this.resolveOrdering();
             return this.table.queryKeysWithConditions({
                 whereClause,
@@ -183,7 +184,7 @@ export class SQLiteCollection<T = any> implements StorageCollection<T> {
     async uniqueKeys(): Promise<unknown[]> {
         // Optimization: use native SQL DISTINCT when no JS filtering needed
         if (!this.hasJsPredicate()) {
-            const { whereClause, parameters } = buildWhereClause(this.state.sqlConditions);
+            const { whereClause, parameters } = buildWhereClause(this.state.orGroups);
             const ordering = this.resolveOrdering();
             return this.table.queryKeysWithConditions({
                 whereClause,
@@ -203,8 +204,8 @@ export class SQLiteCollection<T = any> implements StorageCollection<T> {
         // Optimization: use SQL COUNT when no JS filtering needed
         if (!this.hasJsPredicate()) {
             return this.table.countWithConditions({
-                whereClause: buildWhereClause(this.state.sqlConditions).whereClause,
-                parameters: buildWhereClause(this.state.sqlConditions).parameters,
+                whereClause: buildWhereClause(this.state.orGroups).whereClause,
+                parameters: buildWhereClause(this.state.orGroups).parameters,
                 distinct: this.state.distinct,
             });
         }
@@ -229,7 +230,12 @@ export class SQLiteCollection<T = any> implements StorageCollection<T> {
     }
 
     or(index: string): StorageWhereClause<T> {
-        return this.table.createWhereClause(index, this);
+        // Start a new OR group - subsequent conditions will be ORed with previous groups
+        const newCollection = new SQLiteCollection(this.table, {
+            ...this.state,
+            orGroups: [...this.state.orGroups, []],
+        });
+        return this.table.createWhereClause(index, newCollection);
     }
 
     clone(_props?: Record<string, unknown>): StorageCollection<T> {
@@ -255,7 +261,7 @@ export class SQLiteCollection<T = any> implements StorageCollection<T> {
     async delete(): Promise<number> {
         // Optimization: use native SQL DELETE when no JS filtering needed
         if (!this.hasJsPredicate()) {
-            const { whereClause, parameters } = buildWhereClause(this.state.sqlConditions);
+            const { whereClause, parameters } = buildWhereClause(this.state.orGroups);
             return this.table.deleteWithConditions({ whereClause, parameters });
         }
         // Fallback for JS filtering - must iterate and delete one by one
@@ -269,7 +275,7 @@ export class SQLiteCollection<T = any> implements StorageCollection<T> {
     async modify(changes: Partial<T> | ((item: T) => void | Promise<void>)): Promise<number> {
         // Optimization: use native SQL UPDATE when changes is an object and no JS filtering
         if (typeof changes !== 'function' && !this.hasJsPredicate()) {
-            const { whereClause, parameters } = buildWhereClause(this.state.sqlConditions);
+            const { whereClause, parameters } = buildWhereClause(this.state.orGroups);
             return this.table.updateWithConditions({ whereClause, parameters, changes });
         }
         // Fallback for function-based changes or JS filtering

@@ -787,6 +787,88 @@ describe('Dync Query API', () => {
             });
 
             // ================================================================
+            // Where Clause - OR Operations
+            // ================================================================
+
+            describe('Where Clause - OR Operations', () => {
+                it('finds records matching any of multiple OR conditions', async () => {
+                    const db = await createDb();
+                    const table = db.table('todos');
+
+                    await table.bulkAdd([
+                        createTodo({ title: 'Test-1' }),
+                        createTodo({ title: 'Test-2' }),
+                        createTodo({ title: '22ED-item' }),
+                        createTodo({ title: '3676d-item' }),
+                        createTodo({ title: 'Other' }),
+                    ]);
+
+                    // Should match: Test-1, Test-2, 22ED-item, 3676d-item
+                    const result = await table.where('title').startsWith('Test-').or('title').startsWith('22ED').or('title').startsWith('3676d').toArray();
+
+                    expect(result).toHaveLength(4);
+                    expect(result.map((t) => t.title).sort()).toEqual(['22ED-item', '3676d-item', 'Test-1', 'Test-2']);
+
+                    await db.close();
+                });
+
+                it('finds records with OR on different columns', async () => {
+                    const db = await createDb();
+                    const table = db.table('todos');
+
+                    await table.bulkAdd([
+                        createTodo({ title: 'Important', priority: 1 }),
+                        createTodo({ title: 'Regular', priority: 5 }),
+                        createTodo({ title: 'Urgent', priority: 5 }),
+                        createTodo({ title: 'Low', priority: 3 }),
+                    ]);
+
+                    // Should match: priority 5 OR title starts with 'Imp'
+                    const result = await table.where('priority').equals(5).or('title').startsWith('Imp').toArray();
+
+                    expect(result).toHaveLength(3);
+                    expect(result.map((t) => t.title).sort()).toEqual(['Important', 'Regular', 'Urgent']);
+
+                    await db.close();
+                });
+
+                it('combines OR with other collection methods', async () => {
+                    const db = await createDb();
+                    const table = db.table('todos');
+
+                    await table.bulkAdd([
+                        createTodo({ title: 'A-item', priority: 1 }),
+                        createTodo({ title: 'B-item', priority: 2 }),
+                        createTodo({ title: 'C-item', priority: 3 }),
+                        createTodo({ title: 'D-item', priority: 4 }),
+                    ]);
+
+                    // OR with limit and offset
+                    const limited = await table.where('title').startsWith('A').or('title').startsWith('B').or('title').startsWith('C').limit(2).toArray();
+                    expect(limited).toHaveLength(2);
+
+                    await db.close();
+                });
+
+                it('counts records matching OR conditions', async () => {
+                    const db = await createDb();
+                    const table = db.table('todos');
+
+                    await table.bulkAdd([
+                        createTodo({ title: 'Cat' }),
+                        createTodo({ title: 'Dog' }),
+                        createTodo({ title: 'Bird' }),
+                        createTodo({ title: 'Fish' }),
+                    ]);
+
+                    const count = await table.where('title').equals('Cat').or('title').equals('Dog').count();
+                    expect(count).toBe(2);
+
+                    await db.close();
+                });
+            });
+
+            // ================================================================
             // Collection Operations
             // ================================================================
 

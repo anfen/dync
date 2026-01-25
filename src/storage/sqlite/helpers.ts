@@ -4,7 +4,7 @@ export const SQLITE_SCHEMA_VERSION_STATE_KEY = 'sqlite_schema_version';
 export const DEFAULT_STREAM_BATCH_SIZE = 200;
 
 export const createDefaultState = <T>(): SQLiteCollectionState<T> => ({
-    sqlConditions: [],
+    orGroups: [[]],
     jsPredicate: undefined,
     orderBy: undefined,
     reverse: false,
@@ -18,22 +18,34 @@ export interface SQLiteBuiltQuery {
     parameters: unknown[];
 }
 
-export const buildWhereClause = (conditions: SQLiteCondition[]): SQLiteBuiltQuery => {
-    if (conditions.length === 0) {
+export const buildWhereClause = (orGroups: SQLiteCondition[][]): SQLiteBuiltQuery => {
+    // Filter out empty groups
+    const nonEmptyGroups = orGroups.filter((group) => group.length > 0);
+
+    if (nonEmptyGroups.length === 0) {
         return { whereClause: '', parameters: [] };
     }
 
-    const clauses: string[] = [];
+    const groupClauses: string[] = [];
     const parameters: unknown[] = [];
 
-    for (const condition of conditions) {
-        const built = buildCondition(condition);
-        clauses.push(built.clause);
-        parameters.push(...built.parameters);
+    for (const group of nonEmptyGroups) {
+        const conditionClauses: string[] = [];
+        for (const condition of group) {
+            const built = buildCondition(condition);
+            conditionClauses.push(built.clause);
+            parameters.push(...built.parameters);
+        }
+        // AND conditions within a group
+        const groupClause = conditionClauses.length === 1 ? conditionClauses[0]! : `(${conditionClauses.join(' AND ')})`;
+        groupClauses.push(groupClause);
     }
 
+    // OR between groups (wrap in parens if multiple groups)
+    const whereContent = groupClauses.length === 1 ? groupClauses[0]! : `(${groupClauses.join(' OR ')})`;
+
     return {
-        whereClause: `WHERE ${clauses.join(' AND ')}`,
+        whereClause: `WHERE ${whereContent}`,
         parameters,
     };
 };

@@ -79,8 +79,11 @@ export type SQLiteCondition =
     | SQLiteConditionOr;
 
 export interface SQLiteCollectionState<T> {
-    /** SQL-expressible WHERE conditions (ANDed together) */
-    sqlConditions: SQLiteCondition[];
+    /**
+     * OR groups of SQL conditions. Each group's conditions are ANDed together,
+     * then groups are ORed: (A AND B) OR (C) OR (D AND E)
+     */
+    orGroups: SQLiteCondition[][];
     /** JavaScript predicate for conditions that can't be expressed in SQL (e.g., arbitrary filter functions) */
     jsPredicate?: (record: T, key: string, index: number) => boolean;
     orderBy?: { index: string | string[]; direction: 'asc' | 'desc' };
