@@ -31,7 +31,7 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
 - Storage agnostic. Comes with `Memory`, `IndexedDB` and `Sqlite` adapters (for CapacitorJs & React Native), and extendable with your own custom adapters
 - Lazy loaded data keeps it in native storage, allowing low memory and fast app response, even with >100K records
 - Fast React Native Sqlite access via JSI
-- Dexie.js style collection based api, with query() escape hatch, and native storage performance e.g.:
+- Single collection based api for both SQLite & IndexedDB, plus query() escape hatch for native storage api e.g.:
     - `db.myTable.add()` | `.update()` | `.where('myField').equals(42).first()`
     - `db.query()` is only intended to retrieve records, any mutations will be ignored by the sync engine:
         ```js
@@ -120,7 +120,7 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
 
 ## Non-Goals
 
-- IndexedDB & SQL unified query language:
+- Full IndexedDB & SQL unified query language:
     - Using IndexedDB functions or raw SQL will always be more expressive independently
     - No need to learn another api when you might only need one storage type
     - Would greatly increase complexity of this library
