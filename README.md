@@ -10,7 +10,7 @@ Start with a Website or PWA using IndexedDB, sync with your existing REST API, a
 
 1. Frictionless upgrade path from an offline-first PWA targeting IndexedDB, to when:
 
-    **A) Full text search is required on many records** (IndexedDB doesn't support this so will do a full table scan in the JS VM, which is slow on many records)
+    **A) Substring search is required on many records** (IndexedDB doesn't support this so will do a full table scan in the JS VM, which is both slow and will spike memory)
 
     **_and/or_**
 
