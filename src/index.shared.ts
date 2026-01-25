@@ -358,10 +358,7 @@ class DyncBase<_TStoreMap = Record<string, any>> {
         }
 
         this.syncStatus = 'idle';
-        await this.state.setState((syncState) => ({
-            ...syncState,
-            error: pullResult.error ?? firstPushSyncError,
-        }));
+        this.state.setApiError(pullResult.error ?? firstPushSyncError);
 
         if (this.mutationsDuringSync) {
             this.mutationsDuringSync = false;

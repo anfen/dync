@@ -75,9 +75,9 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         await db.sync.enable(true);
         await addRecordAndGetLocalId(db, 'things', { name: 'a' });
-        await waitUntil(() => !!db.sync.getState().error, 2000);
+        await waitUntil(() => !!db.sync.getState().apiError, 2000);
 
-        const err = db.sync.getState().error;
+        const err = db.sync.getState().apiError;
         expect(err).toBeTruthy();
         if (err && typeof (err as any).message === 'string') {
             expect((err as any).message).toMatch(/list boom/);
@@ -87,7 +87,40 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
         await db.close();
     });
 
-    // Note: BatchSync has different error surfacing behavior - errors may not appear in syncState.error
+    it('network failure sets isNetworkError to true', async () => {
+        const apis = {
+            things: {
+                add: vi.fn(async () => ({})),
+                update: vi.fn(async () => true),
+                remove: vi.fn(async () => {}),
+                list: vi.fn(async () => {
+                    // Simulate a fetch network failure (what browsers throw when offline)
+                    throw new TypeError('Failed to fetch');
+                }),
+                firstLoad: vi.fn(async () => []),
+            },
+        };
+
+        const db = await createDb<Tables>(apis, schema, {
+            dbName: `fail-network-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
+            syncOptions: { syncInterval: 50 },
+            ...adapterOverrides,
+        });
+
+        await db.sync.enable(true);
+        await addRecordAndGetLocalId(db, 'things', { name: 'offline-test' });
+        await waitUntil(() => !!db.sync.getState().apiError, 2000);
+
+        const err = db.sync.getState().apiError;
+        expect(err).toBeTruthy();
+        expect(err?.isNetworkError).toBe(true);
+        expect(err?.message).toMatch(/Failed to fetch/);
+
+        await db.sync.enable(false);
+        await db.close();
+    });
+
+    // Note: BatchSync has different error surfacing behavior - errors may not appear in syncState.apiError
     // This test only applies to per-table sync mode
     it.skipIf(syncMode.key === 'batch')('update failure surfaces first error and keeps item queued', async () => {
         let idCounter = 0;
@@ -120,9 +153,9 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         await updateRecordByLocalId(db, 'things', localId, { name: 'y' });
 
-        await waitUntil(() => !!db.sync.getState().error, 2000);
+        await waitUntil(() => !!db.sync.getState().apiError, 2000);
 
-        const err = db.sync.getState().error;
+        const err = db.sync.getState().apiError;
         expect(err).toBeTruthy();
         if (err && typeof (err as any).message === 'string') {
             expect((err as any).message).toMatch(/update fail/);
@@ -134,7 +167,7 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
         await db.close();
     });
 
-    // Note: BatchSync has different error surfacing behavior - errors may not appear in syncState.error
+    // Note: BatchSync has different error surfacing behavior - errors may not appear in syncState.apiError
     // This test only applies to per-table sync mode
     it.skipIf(syncMode.key === 'batch')('remove failure surfaces error and retains pending delete', async () => {
         let idCounter = 0;
@@ -166,9 +199,9 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
         await waitUntil(() => server.length === 1, 2000);
 
         await removeRecordByLocalId(db, 'things', localId);
-        await waitUntil(() => !!db.sync.getState().error, 2000);
+        await waitUntil(() => !!db.sync.getState().apiError, 2000);
 
-        const err = db.sync.getState().error;
+        const err = db.sync.getState().apiError;
         expect(err).toBeTruthy();
         if (err && typeof (err as any).message === 'string') {
             expect((err as any).message).toMatch(/remove fail/);
@@ -179,9 +212,9 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
         await db.close();
     });
 
-    // Note: BatchSync has different error surfacing behavior - errors may not appear in syncState.error
+    // Note: BatchSync has different error surfacing behavior - errors may not appear in syncState.apiError
     // This test only applies to per-table sync mode
-    it.skipIf(syncMode.key === 'batch')('add failure surfaces error via syncState.error', async () => {
+    it.skipIf(syncMode.key === 'batch')('add failure surfaces error via syncState.apiError', async () => {
         const badApis = {
             things: {
                 add: vi.fn(async () => {
@@ -203,8 +236,8 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         try {
             await addRecordAndGetLocalId(db, 'things', { name: 'err' });
-            await waitUntil(() => !!db.sync.getState().error, 800);
-            const err = db.sync.getState().error;
+            await waitUntil(() => !!db.sync.getState().apiError, 800);
+            const err = db.sync.getState().apiError;
             expect(err).toBeTruthy();
             if (err && typeof (err as any).message === 'string') {
                 expect((err as any).message).toMatch(/add fail/);
@@ -241,8 +274,8 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
             try {
                 await db.sync.enable(true);
                 await addRecordAndGetLocalId(db, 'things', { name: 'x' });
-                await waitUntil(() => !!db.sync.getState().error, 800);
-                const err = db.sync.getState().error;
+                await waitUntil(() => !!db.sync.getState().apiError, 800);
+                const err = db.sync.getState().apiError;
                 expect(err).toBeTruthy();
             } finally {
                 await db.sync.enable(false);

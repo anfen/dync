@@ -1,5 +1,15 @@
 import { deleteKeyIfEmptyObject, omitFields } from '../helpers';
-import { LOCAL_PK, UPDATED_AT, SyncAction, type PendingChange, type PersistedSyncState, type SyncState, type SyncStatus } from '../types';
+import {
+    LOCAL_PK,
+    UPDATED_AT,
+    SyncAction,
+    ApiError,
+    parseApiError,
+    type PendingChange,
+    type PersistedSyncState,
+    type SyncState,
+    type SyncStatus,
+} from '../types';
 import type { StorageAdapter } from '../storage/types';
 
 const LOCAL_ONLY_SYNC_FIELDS = [LOCAL_PK, UPDATED_AT];
@@ -28,7 +38,7 @@ export interface StateHelpers {
     hydrate(): Promise<void>;
     getState(): PersistedSyncState;
     setState(setterOrState: PersistedSyncState | ((state: PersistedSyncState) => Partial<PersistedSyncState>)): Promise<void>;
-    setErrorInMemory(error: Error): void;
+    setApiError(error: Error | undefined): void;
     addPendingChange(change: Omit<PendingChange, 'version'>): Promise<void>;
     samePendingVersion(tableName: string, localId: string, version: number): boolean;
     removePendingChange(localId: string, tableName: string): Promise<void>;
@@ -44,6 +54,7 @@ export interface StateHelpers {
 export class StateManager implements StateHelpers {
     private persistedState: PersistedSyncState;
     private syncStatus: SyncStatus;
+    private apiError?: ApiError;
     private readonly listeners = new Set<(state: SyncState) => void>();
     private readonly storageAdapter?: StorageAdapter;
     private hydrated = false;
@@ -100,12 +111,8 @@ export class StateManager implements StateHelpers {
         return this.persist();
     }
 
-    /**
-     * Set error in memory only without persisting to database.
-     * Used when the database itself failed to open.
-     */
-    setErrorInMemory(error: Error): void {
-        this.persistedState = { ...this.persistedState, error };
+    setApiError(error: Error | undefined): void {
+        this.apiError = error ? parseApiError(error) : undefined;
         this.emit();
     }
 
@@ -199,7 +206,7 @@ export class StateManager implements StateHelpers {
     }
 
     getSyncState(): SyncState {
-        return buildSyncState(this.persistedState, this.syncStatus, this.hydrated);
+        return buildSyncState(this.persistedState, this.syncStatus, this.hydrated, this.apiError);
     }
 
     subscribe(listener: (state: SyncState) => void): () => void {
@@ -229,12 +236,13 @@ function resolveNextState(
     return { ...current, ...setterOrState };
 }
 
-function buildSyncState(state: PersistedSyncState, status: SyncStatus, hydrated: boolean): SyncState {
+function buildSyncState(state: PersistedSyncState, status: SyncStatus, hydrated: boolean, apiError?: ApiError): SyncState {
     const persisted = clonePersistedState(state);
     const syncState: SyncState = {
         ...persisted,
         status,
         hydrated,
+        apiError,
     };
     deleteKeyIfEmptyObject(syncState, 'conflicts');
     return syncState;

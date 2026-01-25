@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createLocalId, changeKeysTo, changeKeysFrom, orderFor, sleep, omitFields, addOnSetDo, deleteKeyIfEmptyObject } from '../../src/helpers';
-import { SyncAction } from '../../src/types';
+import { SyncAction, ApiError, parseApiError } from '../../src/types';
 import { Dync, MemoryAdapter } from '../../src/index';
 
 // ============================================================================
@@ -172,5 +172,147 @@ describe('Dync reactive helpers', () => {
         expect(callback).toHaveBeenLastCalledWith(99);
 
         await db.close();
+    });
+});
+
+// ============================================================================
+// ApiError and parseApiError tests
+// ============================================================================
+
+describe('ApiError', () => {
+    it('constructs with message, isNetworkError, and cause', () => {
+        const cause = new Error('original');
+        const apiError = new ApiError('Something failed', true, cause);
+
+        expect(apiError.message).toBe('Something failed');
+        expect(apiError.isNetworkError).toBe(true);
+        expect(apiError.cause).toBe(cause);
+        expect(apiError.name).toBe('ApiError');
+        expect(apiError).toBeInstanceOf(Error);
+    });
+});
+
+describe('parseApiError', () => {
+    it('returns the same ApiError if already an ApiError', () => {
+        const original = new ApiError('test', true);
+        const parsed = parseApiError(original);
+        expect(parsed).toBe(original);
+    });
+
+    it('converts a regular Error to ApiError with isNetworkError=false', () => {
+        const error = new Error('Something went wrong');
+        const parsed = parseApiError(error);
+
+        expect(parsed).toBeInstanceOf(ApiError);
+        expect(parsed.message).toBe('Something went wrong');
+        expect(parsed.isNetworkError).toBe(false);
+        expect(parsed.cause).toBe(error);
+    });
+
+    it('converts non-Error values to ApiError', () => {
+        const parsed = parseApiError('string error');
+        expect(parsed).toBeInstanceOf(ApiError);
+        expect(parsed.message).toBe('string error');
+        expect(parsed.isNetworkError).toBe(false);
+    });
+
+    describe('network error detection', () => {
+        it('detects fetch TypeError "Failed to fetch"', () => {
+            const error = new TypeError('Failed to fetch');
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(true);
+        });
+
+        it('detects fetch TypeError "Network request failed" (React Native)', () => {
+            const error = new TypeError('Network request failed');
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(true);
+        });
+
+        it('detects axios ERR_NETWORK code', () => {
+            const error = new Error('Network Error') as any;
+            error.code = 'ERR_NETWORK';
+            error.isAxiosError = true;
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(true);
+        });
+
+        it('detects axios ECONNABORTED code (timeout)', () => {
+            const error = new Error('timeout of 5000ms exceeded') as any;
+            error.code = 'ECONNABORTED';
+            error.isAxiosError = true;
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(true);
+        });
+
+        it('detects axios ENOTFOUND code (DNS failure)', () => {
+            const error = new Error('getaddrinfo ENOTFOUND example.com') as any;
+            error.code = 'ENOTFOUND';
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(true);
+        });
+
+        it('detects axios ECONNREFUSED code', () => {
+            const error = new Error('connect ECONNREFUSED 127.0.0.1:3000') as any;
+            error.code = 'ECONNREFUSED';
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(true);
+        });
+
+        it('detects axios error with no response (network level failure)', () => {
+            const error = new Error('Network Error') as any;
+            error.isAxiosError = true;
+            error.response = undefined;
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(true);
+        });
+
+        it('does NOT flag axios error with response as network error', () => {
+            const error = new Error('Request failed with status code 500') as any;
+            error.isAxiosError = true;
+            error.response = { status: 500, data: {} };
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(false);
+        });
+
+        it('detects Apollo GraphQL network error', () => {
+            const error = new Error('Network error') as any;
+            error.name = 'ApolloError';
+            error.networkError = new Error('Failed to fetch');
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(true);
+        });
+
+        it('does NOT flag Apollo GraphQL error without networkError', () => {
+            const error = new Error('GraphQL error') as any;
+            error.name = 'ApolloError';
+            error.graphQLErrors = [{ message: 'Validation failed' }];
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(false);
+        });
+
+        it('detects generic "network error" message', () => {
+            const error = new Error('A network error occurred');
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(true);
+        });
+
+        it('detects generic "NetworkError" message (case insensitive)', () => {
+            const error = new Error('NetworkError when attempting to fetch resource');
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(true);
+        });
+
+        it('does NOT flag regular server errors as network errors', () => {
+            const error = new Error('Internal Server Error');
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(false);
+        });
+
+        it('does NOT flag validation errors as network errors', () => {
+            const error = new Error('Validation failed: name is required');
+            const parsed = parseApiError(error);
+            expect(parsed.isNetworkError).toBe(false);
+        });
     });
 });

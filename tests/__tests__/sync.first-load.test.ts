@@ -133,7 +133,7 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
             // Verify state shows first load is done
             const state = db.sync.getState();
             expect(state.firstLoadDone).toBe(true);
-            expect(state.error).toBeUndefined();
+            expect(state.apiError).toBeUndefined();
         } finally {
             await db.sync.enable(false);
             await db.close();

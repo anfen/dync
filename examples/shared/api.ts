@@ -23,7 +23,7 @@ export function createCRUDSyncApi(api: AxiosInstance): ApiFunctions {
             const { status, statusText } = await api.put<Todo>(`/todos/${id}`, changes, { validateStatus: () => true });
             // Return false if not found, Dync will then use the missing remote record strategy of `ignore`, `delete-local-record` or `insert-remote-record`
             if (status === 404) return false;
-            // All api errors are visible in syncState.error
+            // All api errors are visible in syncState.apiError
             if (status >= 400) throw new Error(`Failed to update: ${statusText}`);
 
             return true;

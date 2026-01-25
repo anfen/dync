@@ -5,6 +5,69 @@ export const SERVER_PK = 'id';
 export const LOCAL_PK = '_localId';
 export const UPDATED_AT = 'updated_at';
 
+export class ApiError extends Error {
+    readonly isNetworkError: boolean;
+    override readonly cause?: Error;
+
+    constructor(message: string, isNetworkError: boolean, cause?: Error) {
+        super(message);
+        this.name = 'ApiError';
+        this.isNetworkError = isNetworkError;
+        this.cause = cause;
+    }
+}
+
+/**
+ * Detects if an error is a network-level failure from common HTTP libraries.
+ * Supports: fetch, axios, Apollo GraphQL, and generic network errors.
+ */
+function isNetworkError(error: Error): boolean {
+    const message = error.message.toLowerCase();
+    const name = error.name;
+
+    // fetch: throws TypeError on network failure
+    if (name === 'TypeError' && (message.includes('failed to fetch') || message.includes('network request failed'))) {
+        return true;
+    }
+
+    // axios: sets error.code for network issues
+    const code = (error as any).code;
+    if (code === 'ERR_NETWORK' || code === 'ECONNABORTED' || code === 'ENOTFOUND' || code === 'ECONNREFUSED') {
+        return true;
+    }
+
+    // axios: no response means request never reached server
+    if ((error as any).isAxiosError && (error as any).response === undefined) {
+        return true;
+    }
+
+    // Apollo GraphQL: network error wrapper
+    if (name === 'ApolloError' && (error as any).networkError) {
+        return true;
+    }
+
+    // Generic network error messages
+    if (message.includes('network error') || message.includes('networkerror')) {
+        return true;
+    }
+
+    return false;
+}
+
+export function parseApiError(error: unknown): ApiError {
+    if (error instanceof ApiError) {
+        return error;
+    }
+
+    if (error instanceof Error) {
+        return new ApiError(error.message, isNetworkError(error), error);
+    }
+
+    // Non-Error thrown (string, object, etc.)
+    const message = String(error);
+    return new ApiError(message, false);
+}
+
 export interface SyncedRecord {
     _localId: string;
     id?: any;
@@ -138,7 +201,6 @@ export interface PersistedSyncState {
     firstLoadDone: boolean;
     pendingChanges: PendingChange[];
     lastPulled: Record<string, string>;
-    error?: Error;
     conflicts?: Record<string, Conflict>;
 }
 
@@ -147,6 +209,7 @@ export type SyncStatus = 'disabled' | 'disabling' | 'idle' | 'syncing' | 'error'
 export interface SyncState extends PersistedSyncState {
     status: SyncStatus;
     hydrated: boolean;
+    apiError?: ApiError;
 }
 
 export enum SyncAction {
