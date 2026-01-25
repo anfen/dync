@@ -24,7 +24,7 @@ function isNetworkError(error: any): boolean {
     const name = error.name;
 
     // fetch: throws TypeError on network failure
-    if (name === 'TypeError' && (message.includes('failed to fetch') || message.includes('network request failed'))) {
+    if (message.includes('failed to fetch') || message.includes('network request failed')) {
         return true;
     }
 
