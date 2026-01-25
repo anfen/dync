@@ -99,6 +99,8 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
     db.sync.resolveConflict(localId, true);
     ```
 
+- Optimistic UI updates
+- Offline detection: `syncState.apiError.isNetworkError`
 - Optional first load data download before periodic sync is enabled
 - Missing remote record on update strategy: `ignore` | `delete-local-record` | `insert-remote-record`
 - Reactive updates when data changes via `useLiveQuery()` React hook:
