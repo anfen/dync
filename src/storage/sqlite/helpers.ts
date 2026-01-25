@@ -76,7 +76,8 @@ const buildCondition = (condition: SQLiteCondition): BuiltCondition => {
     switch (condition.type) {
         case 'equals': {
             if (condition.caseInsensitive) {
-                return { clause: `LOWER(${col}) = LOWER(?)`, parameters: [condition.value] };
+                // COLLATE NOCASE is more efficient than LOWER() as it can use indexes
+                return { clause: `${col} = ? COLLATE NOCASE`, parameters: [condition.value] };
             }
             return { clause: `${col} = ?`, parameters: [condition.value] };
         }
@@ -102,7 +103,7 @@ const buildCondition = (condition: SQLiteCondition): BuiltCondition => {
             const placeholders = condition.values.map(() => '?').join(', ');
             if (condition.caseInsensitive) {
                 return {
-                    clause: `LOWER(${col}) IN (${condition.values.map(() => 'LOWER(?)').join(', ')})`,
+                    clause: `${col} COLLATE NOCASE IN (${placeholders})`,
                     parameters: condition.values,
                 };
             }
@@ -120,9 +121,12 @@ const buildCondition = (condition: SQLiteCondition): BuiltCondition => {
 
         case 'like': {
             if (condition.caseInsensitive) {
-                return { clause: `LOWER(${col}) LIKE LOWER(?)`, parameters: [condition.pattern] };
+                // LIKE is case-insensitive by default for ASCII in SQLite
+                return { clause: `${col} LIKE ?`, parameters: [condition.pattern] };
             }
-            return { clause: `${col} LIKE ?`, parameters: [condition.pattern] };
+            // GLOB is case-sensitive - convert LIKE wildcards (% → *, _ → ?)
+            const globPattern = condition.pattern.replace(/%/g, '*').replace(/_/g, '?');
+            return { clause: `${col} GLOB ?`, parameters: [globPattern] };
         }
     }
 };

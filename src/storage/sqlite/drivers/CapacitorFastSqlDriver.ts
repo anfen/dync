@@ -62,8 +62,6 @@ export class CapacitorFastSqlDriver implements SQLiteDatabaseDriver {
                     encryptionKey,
                     readOnly: this.options.readonly,
                 });
-                // Case-sensitive LIKE to match Dexie's startsWith() behavior
-                await this.db.execute('PRAGMA case_sensitive_like = ON');
                 this.opened = true;
             }
         })();

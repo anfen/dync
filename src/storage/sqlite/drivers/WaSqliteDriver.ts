@@ -324,9 +324,6 @@ export class WaSqliteDriver implements SQLiteDatabaseDriver {
         // Cache size for performance
         await this.sqlite3.exec(this.db, `PRAGMA cache_size = ${this.options.cacheSize}`);
 
-        // Case-sensitive LIKE to match Dexie's startsWith() behavior
-        await this.sqlite3.exec(this.db, 'PRAGMA case_sensitive_like = ON');
-
         // WAL mode only for AccessHandlePoolVFS with exclusive locking
         if (this.options.wal && this.options.vfs === 'AccessHandlePoolVFS') {
             await this.sqlite3.exec(this.db, 'PRAGMA locking_mode = exclusive');

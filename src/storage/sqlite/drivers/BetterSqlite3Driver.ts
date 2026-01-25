@@ -82,9 +82,6 @@ export class BetterSqlite3Driver implements SQLiteDatabaseDriver {
             this.db.pragma('journal_mode = WAL');
         }
 
-        // Case-sensitive LIKE to match Dexie's startsWith() behavior
-        this.db.pragma('case_sensitive_like = ON');
-
         this.opened = true;
     }
 
