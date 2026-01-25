@@ -70,6 +70,8 @@ class SqlJsDriver implements SQLiteDatabaseDriver {
                     locateFile: this.options.locateFile ?? defaultLocateSqlJsFile,
                 });
                 this.db = new sql.Database();
+                // Case-sensitive LIKE to match Dexie's startsWith() behavior
+                this.db.exec('PRAGMA case_sensitive_like = ON');
             })();
         }
         await this.initializing;

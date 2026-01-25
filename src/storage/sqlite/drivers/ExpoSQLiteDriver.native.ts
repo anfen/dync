@@ -20,6 +20,8 @@ export class ExpoSQLiteDriver implements SQLiteDatabaseDriver {
         this.openPromise = (async () => {
             if (!this.db) {
                 this.db = await SQLite.openDatabaseAsync(this.name);
+                // Case-sensitive LIKE to match Dexie's startsWith() behavior
+                await this.db.execAsync('PRAGMA case_sensitive_like = ON');
                 this.opened = true;
             }
         })();

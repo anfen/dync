@@ -699,6 +699,35 @@ describe('Dync Query API', () => {
                     await db.close();
                 });
 
+                it('startsWith() is case-sensitive', async () => {
+                    const db = await createDb();
+                    const table = db.table('todos');
+
+                    await table.bulkAdd([
+                        createTodo({ title: 'Buy milk' }),
+                        createTodo({ title: 'BUY bread' }),
+                        createTodo({ title: 'buy eggs' }),
+                        createTodo({ title: 'BUYING stuff' }),
+                    ]);
+
+                    // Should only match exact case 'Buy'
+                    const buyTasks = await table.where('title').startsWith('Buy').toArray();
+                    expect(buyTasks).toHaveLength(1);
+                    expect(buyTasks[0]!.title).toBe('Buy milk');
+
+                    // Should only match exact case 'BUY'
+                    const upperTasks = await table.where('title').startsWith('BUY').toArray();
+                    expect(upperTasks).toHaveLength(2);
+                    expect(upperTasks.map((t) => t.title).sort()).toEqual(['BUY bread', 'BUYING stuff']);
+
+                    // Should only match exact case 'buy'
+                    const lowerTasks = await table.where('title').startsWith('buy').toArray();
+                    expect(lowerTasks).toHaveLength(1);
+                    expect(lowerTasks[0]!.title).toBe('buy eggs');
+
+                    await db.close();
+                });
+
                 it('finds records with startsWithIgnoreCase()', async () => {
                     const db = await createDb();
                     const table = db.table('todos');

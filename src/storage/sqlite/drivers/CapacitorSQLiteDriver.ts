@@ -88,6 +88,8 @@ export class CapacitorSQLiteDriver implements SQLiteDatabaseDriver {
             }
             const db = await this.ensureDb();
             await db.open();
+            // Case-sensitive LIKE to match Dexie's startsWith() behavior
+            await db.execute('PRAGMA case_sensitive_like = ON');
             this.opened = true;
         })();
 
