@@ -73,9 +73,14 @@ async function createBenchmarkDync(scenario: AdapterScenario) {
     const dbName = `benchmark-${scenario.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`;
     const adapter = scenario.createAdapter(dbName);
 
-    const db = new Dync<BenchmarkSchema>(dbName, dummyApis, adapter, {
-        syncInterval: 0, // Disable sync
-        minLogLevel: 'none',
+    const db = new Dync<BenchmarkSchema>({
+        databaseName: dbName, 
+        storageAdapter: adapter, 
+        sync: dummyApis, 
+        options: {
+            syncInterval: 0, // Disable sync
+            minLogLevel: 'none',
+        }
     });
 
     db.version(1).stores(scenario.schema as any);
