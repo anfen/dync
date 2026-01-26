@@ -171,7 +171,12 @@ export async function runStressTest(
             conflictResolutionStrategy: 'try-shallow-merge',
         };
 
-        const db = new Dync<StressTables>(dbName, apis as Record<string, ApiFunctions>, adapter, syncOptions);
+        const db = new Dync<StressTables>({
+            databaseName: dbName,
+            storageAdapter: adapter,
+            sync: apis as Record<string, ApiFunctions>,
+            options: syncOptions,
+        });
         db.version(1).stores(schema as Record<string, TableSchemaDefinition>);
 
         await db.sync.enable(true);

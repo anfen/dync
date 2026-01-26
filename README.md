@@ -48,9 +48,9 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
     - Option 1: Map remote api CRUD urls to a local collection:
 
         ```ts
-        const db = new Dync(
+        const db = new Dync({
             ...,
-            {
+            sync: {
                 // Only add an entry here for tables that should be synced
                 // Pseudocode here, see examples for working code
                 items: {
@@ -60,16 +60,15 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
                     list: (since) => fetch(`/api/items?since=${since}`),
                 },
             },
-            ...,
-        );
+        });
         ```
 
     - Option 2: Batch sync to remote /push & /pull endpoints:
 
         ```ts
-        const db = new Dync(
+        const db = new Dync({
             ...,
-            {
+            sync: {
                 syncTables: ['items'], // Only add tables to this array that should be synced
                 push: async (changes) => {
                     const res = await fetch('/api/sync/push', {
@@ -80,15 +79,12 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
                     return res.json();
                 },
                 pull: async (since) => {
-                    const params = new URLSearchParams(
-                        Object.entries(since).map(([table, date]) => [table, date.toISOString()])
-                    );
+                    const params = new URLSearchParams(Object.entries(since).map(([table, date]) => [table, date.toISOString()]));
                     const res = await fetch(`/api/sync/pull?${params}`);
                     return res.json();
                 },
             },
-            ...,
-        );
+        });
         ```
 
         See [examples/shared/api.ts](examples/shared/api.ts) for a fully documented example of these two options.

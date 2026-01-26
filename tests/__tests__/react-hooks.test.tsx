@@ -17,7 +17,12 @@ describe('useSyncState React hook', () => {
 
     beforeEach(() => {
         const logger = createSilentLogger();
-        db = new Dync<any>('react-hook-db', {}, new MemoryAdapter('react-hook-db'), { logger, minLogLevel: 'none' });
+        db = new Dync<any>({
+            databaseName: 'react-hook-db',
+            storageAdapter: new MemoryAdapter('react-hook-db'),
+            sync: {},
+            options: { logger, minLogLevel: 'none' },
+        });
 
         const originalError = console.error;
         consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((message?: unknown, ...optionalParams: unknown[]) => {
@@ -69,9 +74,10 @@ describe('useLiveQuery React hook', () => {
     beforeEach(async () => {
         const logger = createSilentLogger();
 
-        db = new Dync<any>(
-            'live-query-db',
-            {
+        db = new Dync<any>({
+            databaseName: 'live-query-db',
+            storageAdapter: new MemoryAdapter('live-query-db'),
+            sync: {
                 items: {
                     add: vi.fn(async (item) => ({ id: Date.now(), ...item })),
                     update: vi.fn(async () => true),
@@ -85,12 +91,11 @@ describe('useLiveQuery React hook', () => {
                     list: vi.fn(async () => []),
                 },
             },
-            new MemoryAdapter('live-query-db'),
-            {
+            options: {
                 logger,
                 minLogLevel: 'none',
             },
-        );
+        });
 
         db.version(1).stores({
             items: 'name',
@@ -297,9 +302,14 @@ describe('useLiveQuery with non-synced tables', () => {
         const logger = createSilentLogger();
 
         // Create a Dync instance with NO sync APIs - purely local storage
-        db = new Dync<any>('non-synced-db', {}, new MemoryAdapter('non-synced-db'), {
-            logger,
-            minLogLevel: 'none',
+        db = new Dync<any>({
+            databaseName: 'non-synced-db',
+            storageAdapter: new MemoryAdapter('non-synced-db'),
+            sync: {},
+            options: {
+                logger,
+                minLogLevel: 'none',
+            },
         });
 
         // Define a non-synced table

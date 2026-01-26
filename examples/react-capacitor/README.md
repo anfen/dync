@@ -62,17 +62,21 @@ const schema = Capacitor.isNativePlatform()
     ? { todos: { columns: { title: { type: 'TEXT' }, completed: { type: 'BOOLEAN' } } } }
     : { todos: 'title' }; // Dexie schema (NoSQL) just lists indexes
 
-export const db = new Dync<Store>(
-    DATABASE_NAME,
-    { todos: createSyncApi(api) },
-    storageAdapter,
-);
+// 3. Create Dync instance
+export const db = new Dync<Store>({
+    databaseName: DATABASE_NAME,
+    storageAdapter: storageAdapter,
+    sync: { todos: createSyncApi(api) },
+});
 
 db.version(1).stores(schema);
 
-// 3. Use in components
+// 4. Use in components
 const syncState = useSyncState(db);
 useLiveQuery(db, async () => { ... });
+
+// 5. Access tables directly via db.tableName
+await db.todos.add({ id: '1', title: 'Test' });
 ```
 
 ## Learn More

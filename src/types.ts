@@ -1,5 +1,5 @@
 import type { Logger, LogLevel } from './logger';
-import type { StorageTable } from './storage/types';
+import type { StorageAdapter, StorageTable } from './storage/types';
 
 export const SERVER_PK = 'id';
 export const LOCAL_PK = '_localId';
@@ -122,6 +122,39 @@ export interface SyncOptions {
     conflictResolutionStrategy?: ConflictResolutionStrategy;
 }
 
+/**
+ * Configuration options for creating a Dync instance.
+ *
+ * @example Per-table sync mode
+ * ```ts
+ * const db = new Dync<Store>({
+ *     databaseName: 'my-app',
+ *     storageAdapter: new SQLiteAdapter(driver),
+ *     sync: { todos: todoSyncApi },
+ * });
+ * ```
+ *
+ * @example Batch sync mode
+ * ```ts
+ * const db = new Dync<Store>({
+ *     databaseName: 'my-app',
+ *     storageAdapter: new SQLiteAdapter(driver),
+ *     sync: { syncTables: ['todos'], push, pull },
+ * });
+ * ```
+ */
+export interface DyncOptions<TStoreMap extends Record<string, any> = Record<string, any>> {
+    databaseName: string;
+    storageAdapter: StorageAdapter;
+    /**
+     * Sync configuration - either per-table APIs or batch sync.
+     * Per-table: `{ tableName: { add, update, remove, list } }`
+     * Batch: `{ syncTables: [...], push, pull }`
+     */
+    sync: Partial<Record<keyof TStoreMap, ApiFunctions>> | BatchSync;
+    options?: SyncOptions;
+}
+
 export interface FirstLoadProgress {
     table: string;
     inserted: number;
@@ -190,7 +223,7 @@ export interface FieldConflict {
     remoteValue: any;
 }
 
-export type TableMap<TStoreMap extends Record<string, unknown>> = {
+export type TableMap<TStoreMap extends Record<string, any>> = {
     [K in keyof TStoreMap]: StorageTable<TStoreMap[K]>;
 };
 

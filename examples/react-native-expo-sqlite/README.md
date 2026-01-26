@@ -34,12 +34,12 @@ import { Dync, SQLiteAdapter } from '@anfenn/dync';
 import { ExpoSQLiteDriver } from '@anfenn/dync/expo-sqlite';
 import { useSyncState, useLiveQuery } from '@anfenn/dync/react';
 
-// 1. Create Dync instance with SQLite adapter
-export const db = new Dync<Store>(
-    'my-app',
-    { todos: createSyncApi(api) },
-    new SQLiteAdapter(new ExpoSQLiteDriver('my-app')),
-);
+// 1. Create Dync instance with named config options
+export const db = new Dync<Store>({
+    databaseName: 'my-app',
+    storageAdapter: new SQLiteAdapter(new ExpoSQLiteDriver('my-app')),
+    sync: { todos: createSyncApi(api) },
+});
 
 // 2. Define your schema - SQLite style with column types
 db.version(1).stores({
@@ -54,6 +54,9 @@ db.version(1).stores({
 // 3. Use in components
 const syncState = useSyncState(db);
 useLiveQuery(db, async () => { ... });
+
+// 4. Access tables directly via db.tableName
+await db.todos.add({ id: '1', title: 'Test', completed: false });
 ```
 
 ## Why Expo SQLite?

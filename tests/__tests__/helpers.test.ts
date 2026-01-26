@@ -133,7 +133,12 @@ describe('Dync reactive helpers', () => {
 
     it('notifies onSyncStateChange listeners when syncStatus updates', async () => {
         const dbName = 'reactive-onSyncStateChange';
-        const db = new Dync(dbName, {}, new MemoryAdapter(dbName), { logger: createSilentLogger(), minLogLevel: 'none' });
+        const db = new Dync({
+            databaseName: dbName,
+            storageAdapter: new MemoryAdapter(dbName),
+            sync: {},
+            options: { logger: createSilentLogger(), minLogLevel: 'none' },
+        });
         const listener = vi.fn();
         const unsubscribe = db.sync.onStateChange(listener);
 
@@ -153,7 +158,12 @@ describe('Dync reactive helpers', () => {
 
     it('addOnSetDo defines accessors and invokes callback on assignment', async () => {
         const dbName = 'reactive-addOnSetDo';
-        const db = new Dync(dbName, {}, new MemoryAdapter(dbName), { logger: createSilentLogger(), minLogLevel: 'none' });
+        const db = new Dync({
+            databaseName: dbName,
+            storageAdapter: new MemoryAdapter(dbName),
+            sync: {},
+            options: { logger: createSilentLogger(), minLogLevel: 'none' },
+        });
         const target: { value: number } = { value: 1 };
         const callback = vi.fn();
 

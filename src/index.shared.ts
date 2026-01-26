@@ -3,6 +3,7 @@ import { sleep } from './helpers';
 import {
     type ApiFunctions,
     type BatchSync,
+    type DyncOptions,
     type SyncOptions,
     type SyncState,
     type SyncedRecord,
@@ -36,7 +37,7 @@ const DEFAULT_MIN_LOG_LEVEL: LogLevel = 'debug';
 const DEFAULT_MISSING_REMOTE_RECORD_STRATEGY: MissingRemoteRecordStrategy = 'insert-remote-record';
 const DEFAULT_CONFLICT_RESOLUTION_STRATEGY: ConflictResolutionStrategy = 'try-shallow-merge';
 
-class DyncBase<_TStoreMap = Record<string, any>> {
+class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
     private readonly adapter: StorageAdapter;
     private readonly tableCache = new Map<string, StorageTable<any>>();
     private readonly mutationWrappedTables = new Set<string>();
@@ -63,31 +64,35 @@ class DyncBase<_TStoreMap = Record<string, any>> {
     /**
      * Create a new Dync instance.
      *
-     * Mode 1 - Per-table endpoints:
-     * @param databaseName - Name of the database
-     * @param syncApis - Map of table names to API functions
-     * @param storageAdapter - Storage adapter implementation (required)
-     * @param options - Sync options
+     * @example Per-table sync mode
+     * ```ts
+     * const db = new Dync<Store>({
+     *     databaseName: 'my-app',
+     *     storageAdapter: new SQLiteAdapter(driver),
+     *     sync: { todos: todoSyncApi },
+     * });
+     * ```
      *
-     * Mode 2 - Batch endpoints:
-     * @param databaseName - Name of the database
-     * @param batchSync - Batch sync config (syncTables, push, pull, firstLoad)
-     * @param storageAdapter - Storage adapter implementation (required)
-     * @param options - Sync options
+     * @example Batch sync mode
+     * ```ts
+     * const db = new Dync<Store>({
+     *     databaseName: 'my-app',
+     *     storageAdapter: new SQLiteAdapter(driver),
+     *     sync: { syncTables: ['todos'], push, pull },
+     * });
+     * ```
      */
-    constructor(databaseName: string, syncApis: Record<string, ApiFunctions>, storageAdapter: StorageAdapter, options?: SyncOptions);
-    constructor(databaseName: string, batchSync: BatchSync, storageAdapter: StorageAdapter, options?: SyncOptions);
-    constructor(databaseName: string, syncApisOrBatchSync: Record<string, ApiFunctions> | BatchSync, storageAdapter: StorageAdapter, options?: SyncOptions) {
-        // Detect mode based on whether the second arg has sync API shape (has 'list' function)
-        const isBatchMode = typeof (syncApisOrBatchSync as BatchSync).push === 'function';
+    constructor(config: DyncOptions<_TStoreMap>) {
+        const { databaseName, storageAdapter, sync: syncConfig, options } = config;
+
+        // Detect mode based on whether sync config has batch sync shape
+        const isBatchMode = typeof (syncConfig as BatchSync).push === 'function' && typeof (syncConfig as BatchSync).pull === 'function';
 
         if (isBatchMode) {
-            // Batch mode: (databaseName, batchSync, options?)
-            this.batchSync = syncApisOrBatchSync as BatchSync;
+            this.batchSync = syncConfig as BatchSync;
             this.syncedTables = new Set(this.batchSync.syncTables);
         } else {
-            // Per-table mode: (databaseName, syncApis, options?)
-            this.syncApis = syncApisOrBatchSync as Record<string, ApiFunctions>;
+            this.syncApis = syncConfig as Record<string, ApiFunctions>;
             this.syncedTables = new Set(Object.keys(this.syncApis));
         }
 
@@ -176,6 +181,19 @@ class DyncBase<_TStoreMap = Record<string, any>> {
                 storesDefined = true;
                 self.adapter.defineSchema(versionNumber, fullSchema, schemaOptions);
                 self.setupEnhancedTables(Object.keys(schema));
+
+                // Define getters for direct table access (e.g., db.todos)
+                for (const tableName of Object.keys(schema)) {
+                    if (!(tableName in self)) {
+                        Object.defineProperty(self, tableName, {
+                            get() {
+                                return self.table(tableName);
+                            },
+                            enumerable: true,
+                            configurable: false,
+                        });
+                    }
+                }
 
                 return builder;
             },
@@ -590,27 +608,16 @@ class DyncBase<_TStoreMap = Record<string, any>> {
     };
 }
 
-type DyncInstance<TStoreMap extends Record<string, unknown> = Record<string, unknown>> = DyncBase<TStoreMap> &
+type DyncInstance<TStoreMap extends Record<string, any> = Record<string, any>> = DyncBase<TStoreMap> &
     TableMap<TStoreMap> & {
         table<K extends keyof TStoreMap & string>(name: K): StorageTable<TStoreMap[K]>;
         table(name: string): StorageTable<any>;
     };
 
-const DyncConstructor = DyncBase as unknown as {
-    prototype: DyncInstance<Record<string, unknown>>;
-    new <TStoreMap extends Record<string, unknown> = Record<string, unknown>>(
-        databaseName: string,
-        syncApis: Record<string, ApiFunctions>,
-        storageAdapter: StorageAdapter,
-        options?: SyncOptions,
-    ): DyncInstance<TStoreMap>;
-    new <TStoreMap extends Record<string, unknown> = Record<string, unknown>>(
-        databaseName: string,
-        batchSync: BatchSync,
-        storageAdapter: StorageAdapter,
-        options?: SyncOptions,
-    ): DyncInstance<TStoreMap>;
-} & typeof DyncBase;
+// Export Dync as a class-like constructor with proper typing for direct table access
+export const Dync = DyncBase as unknown as {
+    <TStoreMap extends Record<string, any> = Record<string, any>>(config: DyncOptions<TStoreMap>): DyncInstance<TStoreMap>;
+    new <TStoreMap extends Record<string, any> = Record<string, any>>(config: DyncOptions<TStoreMap>): DyncInstance<TStoreMap>;
+};
 
-export const Dync = DyncConstructor;
-export type Dync<TStoreMap extends Record<string, unknown> = Record<string, unknown>> = DyncInstance<TStoreMap>;
+export type Dync<TStoreMap extends Record<string, any> = Record<string, any>> = DyncInstance<TStoreMap>;

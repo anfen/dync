@@ -26,7 +26,12 @@ async function createTestDyncInternal<TTables extends Record<string, any>>(
     };
     const storageAdapter = options.storageAdapterFactory(dbName);
 
-    const db = new Dync<TTables>(dbName, sync as any, storageAdapter, syncOptions);
+    const db = new Dync<TTables>({
+        databaseName: dbName,
+        storageAdapter: storageAdapter,
+        sync: sync as any,
+        options: syncOptions,
+    });
     db.version(1).stores(schema as Record<string, TableSchemaDefinition>);
     return db;
 }

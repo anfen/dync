@@ -16,6 +16,7 @@ export type {
     BatchPushResult,
     BatchFirstLoadResult,
     ConflictResolutionStrategy,
+    DyncOptions,
     FirstLoadProgress,
     FirstLoadProgressCallback,
     MissingRemoteRecordStrategy,

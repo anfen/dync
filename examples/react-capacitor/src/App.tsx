@@ -47,31 +47,36 @@ const schema = Capacitor.isNativePlatform()
       };
 
 // Initialize Dync
-export const db = new Dync<Store>(DATABASE_NAME, { todos: createCRUDSyncApi(backend.client) }, storageAdapter, {
-    // Default: 2000 ms
-    syncInterval: 2000,
+export const db = new Dync<Store>({
+    databaseName: DATABASE_NAME,
+    storageAdapter: storageAdapter,
+    sync: { todos: createCRUDSyncApi(backend.client) },
+    options: {
+        // Default: 2000 ms
+        syncInterval: 2000,
 
-    // Default: console
-    logger: console,
+        // Default: console
+        logger: console,
 
-    // Options: 'debug' | 'info' | 'warn' | 'error' | 'none'
-    // Default: 'debug'
-    minLogLevel: 'debug',
+        // Options: 'debug' | 'info' | 'warn' | 'error' | 'none'
+        // Default: 'debug'
+        minLogLevel: 'debug',
 
-    // Allows e.g. updating child records with this server assigned id
-    onAfterRemoteAdd: (_tableName: string, _item: SyncedRecord) => {},
+        // Allows e.g. updating child records with this server assigned id
+        onAfterRemoteAdd: (_tableName: string, _item: SyncedRecord) => {},
 
-    // Allows e.g. notifying the user about missing remote record
-    onAfterMissingRemoteRecordDuringUpdate: (_strategy: MissingRemoteRecordStrategy, _item: SyncedRecord) => {},
+        // Allows e.g. notifying the user about missing remote record
+        onAfterMissingRemoteRecordDuringUpdate: (_strategy: MissingRemoteRecordStrategy, _item: SyncedRecord) => {},
 
-    // Options: 'ignore' | 'delete-local-record' | 'insert-remote-record'
-    // Default: 'insert-remote-record'
-    // Triggered by api.update() returning false confirming the absence of the remote record
-    missingRemoteRecordDuringUpdateStrategy: 'ignore',
+        // Options: 'ignore' | 'delete-local-record' | 'insert-remote-record'
+        // Default: 'insert-remote-record'
+        // Triggered by api.update() returning false confirming the absence of the remote record
+        missingRemoteRecordDuringUpdateStrategy: 'ignore',
 
-    // Options: 'local-wins' | 'remote-wins' | 'try-shallow-merge'
-    // Default: 'try-shallow-merge' (Conflicts are listed in syncState.conflicts)
-    conflictResolutionStrategy: 'try-shallow-merge',
+        // Options: 'local-wins' | 'remote-wins' | 'try-shallow-merge'
+        // Default: 'try-shallow-merge' (Conflicts are listed in syncState.conflicts)
+        conflictResolutionStrategy: 'try-shallow-merge',
+    },
 });
 
 db.version(1).stores(schema);
