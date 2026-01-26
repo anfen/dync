@@ -1,2 +1,3 @@
-export { makeDync } from './useDync';
-export type { BoundUseLiveQuery, MakeDyncConfig, MakeDyncConfigBatch, MakeDyncConfigPerTable, MakeDyncResult, UseDyncValue } from './useDync';
+export { useSyncState } from './useSyncState';
+export { useLiveQuery } from './useLiveQuery';
+export type { DyncLike } from './types';

@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@anfenn/dync.svg)](https://www.npmjs.com/package/@anfenn/dync)
 
-A complete React offline-first data layer with sync engine for any local storage (IndexedDB, Sqlite, etc.), and any backend (Restful, GraphQL, Supabase, etc.) in a Website, PWA, CapacitorJs, React Native, or Electron app.
+A complete Typescript offline-first data layer with sync engine for any local storage (IndexedDB, Sqlite, etc.), and any backend (Restful, GraphQL, Supabase, etc.) in a Website, PWA, CapacitorJs, React Native, or Electron app.
 
 Start with a Website or PWA using IndexedDB, sync with your existing REST API, and later ship native apps with encrypted SQLite - without changing a line of code.
 
@@ -48,7 +48,7 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
     - Option 1: Map remote api CRUD urls to a local collection:
 
         ```ts
-        const db = makeDync(
+        const db = new Dync(
             ...,
             {
                 // Only add an entry here for tables that should be synced
@@ -60,13 +60,14 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
                     list: (since) => fetch(`/api/items?since=${since}`),
                 },
             },
+            ...,
         );
         ```
 
     - Option 2: Batch sync to remote /push & /pull endpoints:
 
         ```ts
-        const db = makeDync(
+        const db = new Dync(
             ...,
             {
                 syncTables: ['items'], // Only add tables to this array that should be synced
@@ -86,6 +87,7 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
                     return res.json();
                 },
             },
+            ...,
         );
         ```
 
@@ -94,7 +96,7 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
 - Full conflict resolution: `local-wins`, `remote-wins` or with `try-shallow-merge` the user can resolve with:
 
     ```ts
-    const { syncState, db } = useDync();
+    const syncState = useSyncState(db);
     syncState.conflicts; // Record<localId, Conflict>
     db.sync.resolveConflict(localId, true);
     ```
@@ -107,11 +109,12 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
 
     ```ts
     useLiveQuery(
-        async (db) => {
+        db,
+        async () => {
             const items = await db.items.toArray(); // toArray() executes the query
             setTodos(items);
         },
-        [], // Re-run when variables change
+        [], // Re-run when variables change (None defined)
         ['items'], // Re-run when tables change
     );
     ```
@@ -124,6 +127,7 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
 
 - Full IndexedDB & SQL unified query language:
     - Using IndexedDB functions or raw SQL will always be more expressive independently
+    - When required, best performance will always come from native api
     - No need to learn another api when you might only need one storage type
     - Would greatly increase complexity of this library
 

@@ -214,9 +214,9 @@ describe.each(combinedMatrix)('Dync conflict resolution (%s)', (_label, scenario
 
             await db.sync.enable(true);
             await runSyncCycle(db, { timeout: 2000, keepEnabled: true });
-            await waitUntil(() => !!db.sync.getState().conflicts?.[localId], 2000);
+            await waitUntil(() => !!db.sync.state.conflicts?.[localId], 2000);
 
-            const conflicts = db.sync.getState().conflicts;
+            const conflicts = db.sync.state.conflicts;
             expect(conflicts?.[localId]).toBeDefined();
             expect(conflicts?.[localId]?.fields?.length).toBeGreaterThan(0);
         } finally {
@@ -256,7 +256,7 @@ describe.each(combinedMatrix)('Dync conflict resolution (%s)', (_label, scenario
             const final = await getRecordByLocalId(db, 'items', localId);
             expect(final?.name).toBe('local-change');
             expect(final?.extra).toBe('remote-extra');
-            expect(db.sync.getState().conflicts?.[localId]).toBeUndefined();
+            expect(db.sync.state.conflicts?.[localId]).toBeUndefined();
         } finally {
             await db.sync.enable(false);
             await db.close();

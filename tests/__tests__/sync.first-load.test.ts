@@ -109,7 +109,7 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
 
             // Wait for first load to complete
             await waitUntilAsync(async () => {
-                const state = db.sync.getState();
+                const state = db.sync.state;
                 return state.firstLoadDone === true;
             }, 30000);
 
@@ -131,7 +131,7 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
             expect(lastRecord?.name).toBe(`fish-${TOTAL_RECORDS}`);
 
             // Verify state shows first load is done
-            const state = db.sync.getState();
+            const state = db.sync.state;
             expect(state.firstLoadDone).toBe(true);
             expect(state.apiError).toBeUndefined();
         } finally {
@@ -147,7 +147,7 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
         try {
             // Run first load
             await db.sync.startFirstLoad();
-            await waitUntilAsync(async () => db.sync.getState().firstLoadDone === true, 30000);
+            await waitUntilAsync(async () => db.sync.state.firstLoadDone === true, 30000);
 
             const callCountAfterFirst = apis.fish.firstLoad.mock.calls.length;
 
@@ -174,7 +174,7 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
 
         try {
             await db.sync.startFirstLoad();
-            await waitUntilAsync(async () => db.sync.getState().firstLoadDone === true, 30000);
+            await waitUntilAsync(async () => db.sync.state.firstLoadDone === true, 30000);
 
             // Deleted records should not be in local db
             const localCount = await db.table('fish').count();
@@ -205,7 +205,7 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
             server[0]!.name = 'updated-fish-1';
 
             await db.sync.startFirstLoad();
-            await waitUntilAsync(async () => db.sync.getState().firstLoadDone === true, 30000);
+            await waitUntilAsync(async () => db.sync.state.firstLoadDone === true, 30000);
 
             // The existing record should be updated, not duplicated
             const count = await db.table('fish').count();
@@ -230,9 +230,9 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
             const newestServerTimestamp = server[server.length - 1]!.updated_at;
 
             await db.sync.startFirstLoad();
-            await waitUntilAsync(async () => db.sync.getState().firstLoadDone === true, 30000);
+            await waitUntilAsync(async () => db.sync.state.firstLoadDone === true, 30000);
 
-            const state = db.sync.getState();
+            const state = db.sync.state;
             expect(state.lastPulled).toBeDefined();
             expect(state.lastPulled.fish).toBeDefined();
 
@@ -252,7 +252,7 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
 
         try {
             await db.sync.startFirstLoad();
-            await waitUntilAsync(async () => db.sync.getState().firstLoadDone === true, 30000);
+            await waitUntilAsync(async () => db.sync.state.firstLoadDone === true, 30000);
 
             // Directly query the _dync_state table to verify persistence
             const stateTable = db.table('_dync_state');

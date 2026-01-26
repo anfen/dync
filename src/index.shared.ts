@@ -107,6 +107,12 @@ class DyncBase<_TStoreMap = Record<string, any>> {
             storageAdapter: this.adapter,
         });
 
+        // Define state getter on sync object (can't use getter syntax in object literal with proper `this` binding)
+        Object.defineProperty(this.sync, 'state', {
+            get: () => this.getSyncState(),
+            enumerable: true,
+        });
+
         const driverInfo = 'driverType' in this.adapter ? ` (Driver: ${this.adapter.driverType})` : '';
         this.logger.debug(`[dync] Initialized with ${this.adapter.type}${driverInfo}`);
     }
@@ -577,7 +583,7 @@ class DyncBase<_TStoreMap = Record<string, any>> {
     sync: SyncApi = {
         enable: this.enableSync.bind(this),
         startFirstLoad: this.startFirstLoad.bind(this),
-        getState: this.getSyncState.bind(this),
+        state: undefined as unknown as SyncState, // getter in constructor
         resolveConflict: this.resolveConflict.bind(this),
         onStateChange: this.onSyncStateChange.bind(this),
         onMutation: this.onMutation.bind(this),

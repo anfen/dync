@@ -250,7 +250,7 @@ export async function runStressTest(
         // Wait for sync to settle
         const deadline = Date.now() + timeoutMs;
         while (true) {
-            const syncState = db.sync.getState();
+            const syncState = db.sync.state;
             const items = await table.toArray();
             const pending = syncState.pendingChanges?.length ?? 0;
             const missingIds = items.some((it: any) => !it.id);

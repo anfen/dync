@@ -134,7 +134,8 @@ export type FirstLoadProgressCallback = (progress: FirstLoadProgress) => void;
 export type SyncApi = {
     enable: (enabled: boolean) => Promise<void>;
     startFirstLoad: (onProgress?: FirstLoadProgressCallback) => Promise<void>;
-    getState: () => SyncState;
+    /** Current sync state - use useSyncState() hook for reactive updates in React */
+    readonly state: SyncState;
     resolveConflict: (localId: string, keepLocal: boolean) => Promise<void>;
     onStateChange: (fn: (state: SyncState) => void) => () => void;
     onMutation: (fn: (event: MutationEvent) => void) => () => void;

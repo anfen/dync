@@ -75,9 +75,9 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         await db.sync.enable(true);
         await addRecordAndGetLocalId(db, 'things', { name: 'a' });
-        await waitUntil(() => !!db.sync.getState().apiError, 2000);
+        await waitUntil(() => !!db.sync.state.apiError, 2000);
 
-        const err = db.sync.getState().apiError;
+        const err = db.sync.state.apiError;
         expect(err).toBeTruthy();
         if (err && typeof (err as any).message === 'string') {
             expect((err as any).message).toMatch(/list boom/);
@@ -109,9 +109,9 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         await db.sync.enable(true);
         await addRecordAndGetLocalId(db, 'things', { name: 'offline-test' });
-        await waitUntil(() => !!db.sync.getState().apiError, 2000);
+        await waitUntil(() => !!db.sync.state.apiError, 2000);
 
-        const err = db.sync.getState().apiError;
+        const err = db.sync.state.apiError;
         expect(err).toBeTruthy();
         expect(err?.isNetworkError).toBe(true);
         expect(err?.message).toMatch(/Failed to fetch/);
@@ -153,15 +153,15 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         await updateRecordByLocalId(db, 'things', localId, { name: 'y' });
 
-        await waitUntil(() => !!db.sync.getState().apiError, 2000);
+        await waitUntil(() => !!db.sync.state.apiError, 2000);
 
-        const err = db.sync.getState().apiError;
+        const err = db.sync.state.apiError;
         expect(err).toBeTruthy();
         if (err && typeof (err as any).message === 'string') {
             expect((err as any).message).toMatch(/update fail/);
         }
         expect(apis.things.update).toHaveBeenCalled();
-        expect(db.sync.getState().pendingChanges.length).toBeGreaterThan(0);
+        expect(db.sync.state.pendingChanges.length).toBeGreaterThan(0);
 
         await db.sync.enable(false);
         await db.close();
@@ -199,9 +199,9 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
         await waitUntil(() => server.length === 1, 2000);
 
         await removeRecordByLocalId(db, 'things', localId);
-        await waitUntil(() => !!db.sync.getState().apiError, 2000);
+        await waitUntil(() => !!db.sync.state.apiError, 2000);
 
-        const err = db.sync.getState().apiError;
+        const err = db.sync.state.apiError;
         expect(err).toBeTruthy();
         if (err && typeof (err as any).message === 'string') {
             expect((err as any).message).toMatch(/remove fail/);
@@ -236,8 +236,8 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         try {
             await addRecordAndGetLocalId(db, 'things', { name: 'err' });
-            await waitUntil(() => !!db.sync.getState().apiError, 800);
-            const err = db.sync.getState().apiError;
+            await waitUntil(() => !!db.sync.state.apiError, 800);
+            const err = db.sync.state.apiError;
             expect(err).toBeTruthy();
             if (err && typeof (err as any).message === 'string') {
                 expect((err as any).message).toMatch(/add fail/);
@@ -274,8 +274,8 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
             try {
                 await db.sync.enable(true);
                 await addRecordAndGetLocalId(db, 'things', { name: 'x' });
-                await waitUntil(() => !!db.sync.getState().apiError, 800);
-                const err = db.sync.getState().apiError;
+                await waitUntil(() => !!db.sync.state.apiError, 800);
+                const err = db.sync.state.apiError;
                 expect(err).toBeTruthy();
             } finally {
                 await db.sync.enable(false);

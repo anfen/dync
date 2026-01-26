@@ -194,7 +194,7 @@ export async function removeRecordByLocalId<TTables extends Record<string, any>>
 export async function waitForSyncIdle<TTables extends Record<string, any>>(db: Dync<TTables>, timeout = 2000, pollInterval = 25): Promise<void> {
     const start = Date.now();
     while (Date.now() - start < timeout) {
-        const state = db.sync.getState();
+        const state = db.sync.state;
         const pending = state.pendingChanges ?? [];
         if (state.status !== 'syncing') {
             const unresolvedPending = pending.filter((change) => !state.conflicts || !state.conflicts[change.localId]);
@@ -212,7 +212,7 @@ export async function runSyncCycle<TTables extends Record<string, any>>(
     options: { timeout?: number; keepEnabled?: boolean } = {},
 ): Promise<void> {
     const { timeout = 2000, keepEnabled = false } = options;
-    const initialState = db.sync.getState();
+    const initialState = db.sync.state;
     const wasDisabled = initialState.status === 'disabled';
     const wasSyncing = initialState.status === 'syncing';
     const hadPending = (initialState.pendingChanges?.length ?? 0) > 0;
@@ -227,7 +227,7 @@ export async function runSyncCycle<TTables extends Record<string, any>>(
     }
 
     if (wasDisabled && hadPending) {
-        await waitUntil(() => db.sync.getState().status === 'syncing', timeout);
+        await waitUntil(() => db.sync.state.status === 'syncing', timeout);
     }
 
     await waitForSyncIdle(db, timeout);
@@ -241,7 +241,7 @@ export async function requestSyncOnce<TTables extends Record<string, any>>(
     db: Dync<TTables>,
     options: { timeout?: number; keepEnabled?: boolean } = {},
 ): Promise<void> {
-    const state = db.sync.getState();
+    const state = db.sync.state;
     if (state.status === 'syncing') {
         return;
     }

@@ -30,12 +30,16 @@ This includes:
 ## Key Dync Integration Points
 
 ```tsx
+import { Dync, SQLiteAdapter } from '@anfenn/dync';
+import { ExpoSQLiteDriver } from '@anfenn/dync/expo-sqlite';
+import { useSyncState, useLiveQuery } from '@anfenn/dync/react';
+
 // 1. Create Dync instance with SQLite adapter
-const { db, useDync } = makeDync<TodoStoreMap>({
-    databaseName: 'my-app',
-    storageAdapter: new SQLiteAdapter(new ExpoSQLiteDriver('my-app')),
-    syncApis: { todos: createSyncApi(api) },
-});
+export const db = new Dync<Store>(
+    'my-app',
+    { todos: createSyncApi(api) },
+    new SQLiteAdapter(new ExpoSQLiteDriver('my-app')),
+);
 
 // 2. Define your schema - SQLite style with column types
 db.version(1).stores({
@@ -47,8 +51,9 @@ db.version(1).stores({
     },
 });
 
-// 3. Use in components (same API everywhere!)
-const { db, syncState } = useDync();
+// 3. Use in components
+const syncState = useSyncState(db);
+useLiveQuery(db, async () => { ... });
 ```
 
 ## Why Expo SQLite?

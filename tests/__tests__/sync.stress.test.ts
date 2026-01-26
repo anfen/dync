@@ -199,7 +199,7 @@ describe.each(combinedMatrix)('stress test (%s)', (_label, scenario, syncMode) =
 
         const deadline = Date.now() + 60_000 * 3;
         while (true) {
-            const syncState = db.sync.getState();
+            const syncState = db.sync.state;
             const items = await table.toArray();
             const pending = syncState.pendingChanges?.length ?? 0;
             const missingIds = items.some((it: any) => !it.id);

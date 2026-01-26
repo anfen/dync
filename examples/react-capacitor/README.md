@@ -40,6 +40,10 @@ This includes:
 ## Key Dync Integration Points
 
 ```tsx
+import { Dync, SQLiteAdapter } from '@anfenn/dync';
+import { DexieAdapter } from '@anfenn/dync/dexie';
+import { CapacitorSQLiteDriver } from '@anfenn/dync/capacitor';
+import { useSyncState, useLiveQuery } from '@anfenn/dync/react';
 import { Capacitor } from '@capacitor/core';
 
 // 1. Create storage adapter based on platform
@@ -54,18 +58,21 @@ const storageAdapter = Capacitor.isNativePlatform()
     : new DexieAdapter(DATABASE_NAME);
 
 // 2. Define schema based on adapter type
-const schema = Capacitor.isNativePlatform() ? { todos: { columns: { title: { type: 'TEXT' }, completed: { type: 'BOOLEAN' } } } } : { todos: 'title' }; // This Dexie schema (NoSQL) justs lists indexes
+const schema = Capacitor.isNativePlatform()
+    ? { todos: { columns: { title: { type: 'TEXT' }, completed: { type: 'BOOLEAN' } } } }
+    : { todos: 'title' }; // Dexie schema (NoSQL) just lists indexes
 
-const { db, useDync } = makeDync<Store>({
-    databaseName: DATABASE_NAME,
+export const db = new Dync<Store>(
+    DATABASE_NAME,
+    { todos: createSyncApi(api) },
     storageAdapter,
-    syncApis: { todos: createSyncApi(api) },
-});
+);
 
 db.version(1).stores(schema);
 
-// 3. Use in components (same API everywhere!)
-const { db, syncState } = useDync();
+// 3. Use in components
+const syncState = useSyncState(db);
+useLiveQuery(db, async () => { ... });
 ```
 
 ## Learn More

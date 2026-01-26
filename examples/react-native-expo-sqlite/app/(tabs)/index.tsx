@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Switch, ScrollView } from 'react-native';
-import { SQLiteAdapter, type MissingRemoteRecordStrategy, type SyncedRecord } from '@anfenn/dync';
+import { Dync, SQLiteAdapter, type MissingRemoteRecordStrategy, type SyncedRecord } from '@anfenn/dync';
 import { ExpoSQLiteDriver } from '@anfenn/dync/expo-sqlite';
-import { makeDync } from '@anfenn/dync/react';
+import { useSyncState, useLiveQuery } from '@anfenn/dync/react';
 import { createMockBackend, createCRUDSyncApi, type Todo, ServerTodo } from '@examples/shared';
 import { seedBackendMock, waitUntil } from './demoOnlyHelpers';
 
@@ -19,40 +19,32 @@ const DATABASE_NAME = 'react-native-expo-sqlite-demo';
 // IGNORE: Demo purposes only
 const backend = createMockBackend();
 
-const { db, useDync, useLiveQuery } = makeDync<Store>({
-    databaseName: DATABASE_NAME,
-    storageAdapter: new SQLiteAdapter(new ExpoSQLiteDriver(DATABASE_NAME)),
-    syncApis: {
-        todos: createCRUDSyncApi(backend.client),
-    },
-    // Swap above syncApis with the following to use batch sync instead
-    // batchSync: createBatchSyncApi(backend.client),
-    options: {
-        // Default: 2000 ms
-        syncInterval: 2000,
+// Initialize Dync
+export const db = new Dync<Store>(DATABASE_NAME, { todos: createCRUDSyncApi(backend.client) }, new SQLiteAdapter(new ExpoSQLiteDriver(DATABASE_NAME)), {
+    // Default: 2000 ms
+    syncInterval: 2000,
 
-        // Default: console
-        logger: console,
+    // Default: console
+    logger: console,
 
-        // Options: 'debug' | 'info' | 'warn' | 'error' | 'none'
-        // Default: 'debug'
-        minLogLevel: 'debug',
+    // Options: 'debug' | 'info' | 'warn' | 'error' | 'none'
+    // Default: 'debug'
+    minLogLevel: 'debug',
 
-        // Allows e.g. updating child records with this server assigned id
-        onAfterRemoteAdd: (_tableName: string, _item: SyncedRecord) => {},
+    // Allows e.g. updating child records with this server assigned id
+    onAfterRemoteAdd: (_tableName: string, _item: SyncedRecord) => {},
 
-        // Allows e.g. notifying the user about missing remote record
-        onAfterMissingRemoteRecordDuringUpdate: (_strategy: MissingRemoteRecordStrategy, _item: SyncedRecord) => {},
+    // Allows e.g. notifying the user about missing remote record
+    onAfterMissingRemoteRecordDuringUpdate: (_strategy: MissingRemoteRecordStrategy, _item: SyncedRecord) => {},
 
-        // Options: 'ignore' | 'delete-local-record' | 'insert-remote-record'
-        // Default: 'insert-remote-record'
-        // Triggered by api.update() returning false confirming the absence of the remote record
-        missingRemoteRecordDuringUpdateStrategy: 'ignore',
+    // Options: 'ignore' | 'delete-local-record' | 'insert-remote-record'
+    // Default: 'insert-remote-record'
+    // Triggered by api.update() returning false confirming the absence of the remote record
+    missingRemoteRecordDuringUpdateStrategy: 'ignore',
 
-        // Options: 'local-wins' | 'remote-wins' | 'try-shallow-merge'
-        // Default: 'try-shallow-merge' (Conflicts are listed in syncState.conflicts)
-        conflictResolutionStrategy: 'try-shallow-merge',
-    },
+    // Options: 'local-wins' | 'remote-wins' | 'try-shallow-merge'
+    // Default: 'try-shallow-merge' (Conflicts are listed in syncState.conflicts)
+    conflictResolutionStrategy: 'try-shallow-merge',
 });
 
 // Define your schema - SQLite style (with column types)
@@ -70,7 +62,7 @@ db.version(1).stores({
 // =============================================================================
 
 export default function TodoScreen() {
-    const { db, syncState } = useDync();
+    const syncState = useSyncState(db);
     const [isReady, setIsReady] = useState(false);
     const [todos, setTodos] = useState<Todo[]>([]);
     const [backendTodos, setBackendTodos] = useState<ServerTodo[]>([]);
@@ -84,8 +76,7 @@ export default function TodoScreen() {
             // IGNORE: Demo purposes only - Seeds mock backend with existing local data
             await seedBackendMock(db, backend);
 
-            const state = db.sync.getState(); // Loads persisted & memory-only sync state (firstLoadDone is persisted to storage)
-            if (!state.firstLoadDone) {
+            if (!db.sync.state.firstLoadDone) {
                 await db.sync.startFirstLoad(); // Pass in progress callback if needed
             }
             await db.sync.enable(true);
@@ -99,10 +90,15 @@ export default function TodoScreen() {
     }, []);
 
     // Reactive updates from Dync
-    useLiveQuery(async (db) => {
-        const items = await db.todos.toArray(); // toArray() executes the query
-        setTodos(items);
-    }); // Re-run when any table changes as no table array here
+    useLiveQuery(
+        db,
+        async () => {
+            const items = await db.todos.toArray(); // toArray() executes the query
+            setTodos(items);
+        },
+        [], // Re-run when variables change (None specified)
+        ['todos'], // Re-run when todos table changes
+    );
 
     // Use Dync to perform CRUD operations
     const handleAdd = async () => {

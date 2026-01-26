@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { makeDync } from '../../src/react';
+import { Dync } from '../../src/index.shared';
+import { useSyncState, useLiveQuery } from '../../src/react';
 import { MemoryAdapter } from '../../src/storage/memory';
 
 const createSilentLogger = () => ({
@@ -10,21 +11,13 @@ const createSilentLogger = () => ({
     error: vi.fn(),
 });
 
-describe('useDync React hook', () => {
-    let useDync: ReturnType<typeof makeDync>['useDync'];
-    let db: ReturnType<typeof makeDync>['db'];
+describe('useSyncState React hook', () => {
+    let db: Dync<any>;
     let consoleErrorSpy: ReturnType<typeof vi.spyOn> | undefined;
 
     beforeEach(() => {
         const logger = createSilentLogger();
-        const dync = makeDync({
-            databaseName: 'react-hook-db',
-            syncApis: {},
-            storageAdapter: new MemoryAdapter('react-hook-db'),
-            options: { logger, minLogLevel: 'none' },
-        });
-        db = dync.db;
-        useDync = dync.useDync;
+        db = new Dync<any>('react-hook-db', {}, new MemoryAdapter('react-hook-db'), { logger, minLogLevel: 'none' });
 
         const originalError = console.error;
         consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((message?: unknown, ...optionalParams: unknown[]) => {
@@ -40,18 +33,17 @@ describe('useDync React hook', () => {
         consoleErrorSpy?.mockRestore();
     });
 
-    it('provides db instance and reflects syncState transitions', async () => {
-        const { result } = renderHook(() => useDync());
+    it('reflects syncState transitions', async () => {
+        const { result } = renderHook(() => useSyncState(db));
 
-        expect(result.current.db.name).toBe('react-hook-db');
-        expect(result.current.syncState.status).toBe('disabled');
+        expect(result.current.status).toBe('disabled');
 
         await act(async () => {
             db.syncStatus = 'syncing';
         });
 
         await waitFor(() => {
-            expect(result.current.syncState.status).toBe('syncing');
+            expect(result.current.status).toBe('syncing');
         });
 
         await act(async () => {
@@ -59,31 +51,27 @@ describe('useDync React hook', () => {
         });
 
         await waitFor(() => {
-            expect(result.current.syncState.status).toBe('idle');
+            expect(result.current.status).toBe('idle');
         });
     });
 
-    it('returns a stable db reference across renders', () => {
-        const { result, rerender } = renderHook(() => useDync());
-
-        const initialDb = result.current.db;
-        rerender();
-
-        expect(result.current.db).toBe(initialDb);
+    it('provides db.sync.state convenience getter', () => {
+        const state = db.sync.state;
+        expect(state.status).toBe('disabled');
+        expect(state.firstLoadDone).toBe(false);
     });
 });
 
 describe('useLiveQuery React hook', () => {
-    let useLiveQuery: ReturnType<typeof makeDync>['useLiveQuery'];
-    let db: ReturnType<typeof makeDync>['db'];
+    let db: Dync<any>;
     let consoleErrorSpy: ReturnType<typeof vi.spyOn> | undefined;
 
     beforeEach(async () => {
         const logger = createSilentLogger();
 
-        const dync = makeDync({
-            databaseName: 'live-query-db',
-            syncApis: {
+        db = new Dync<any>(
+            'live-query-db',
+            {
                 items: {
                     add: vi.fn(async (item) => ({ id: Date.now(), ...item })),
                     update: vi.fn(async () => true),
@@ -97,14 +85,12 @@ describe('useLiveQuery React hook', () => {
                     list: vi.fn(async () => []),
                 },
             },
-            storageAdapter: new MemoryAdapter('live-query-db'),
-            options: {
+            new MemoryAdapter('live-query-db'),
+            {
                 logger,
                 minLogLevel: 'none',
             },
-        });
-        db = dync.db;
-        useLiveQuery = dync.useLiveQuery;
+        );
 
         db.version(1).stores({
             items: 'name',
@@ -125,7 +111,7 @@ describe('useLiveQuery React hook', () => {
     });
 
     it('returns undefined initially and updates when data loads', async () => {
-        const { result } = renderHook(() => useLiveQuery((db) => db.table('items').toArray()));
+        const { result } = renderHook(() => useLiveQuery(db, () => db.table('items').toArray()));
 
         // Should return undefined initially
         expect(result.current).toBeUndefined();
@@ -136,7 +122,7 @@ describe('useLiveQuery React hook', () => {
     });
 
     it('re-runs query when data is added', async () => {
-        const { result } = renderHook(() => useLiveQuery((db) => db.table('items').toArray()));
+        const { result } = renderHook(() => useLiveQuery(db, () => db.table('items').toArray()));
 
         await waitFor(() => {
             expect(result.current).toEqual([]);
@@ -159,7 +145,7 @@ describe('useLiveQuery React hook', () => {
             localId = (await db.table('items').add({ name: 'original' })) as string;
         });
 
-        const { result } = renderHook(() => useLiveQuery((db) => db.table('items').toArray()));
+        const { result } = renderHook(() => useLiveQuery(db, () => db.table('items').toArray()));
 
         await waitFor(() => {
             expect(result.current).toHaveLength(1);
@@ -182,7 +168,7 @@ describe('useLiveQuery React hook', () => {
             localId = (await db.table('items').add({ name: 'to-delete' })) as string;
         });
 
-        const { result } = renderHook(() => useLiveQuery((db) => db.table('items').count()));
+        const { result } = renderHook(() => useLiveQuery(db, () => db.table('items').count()));
 
         await waitFor(() => {
             expect(result.current).toBe(1);
@@ -205,15 +191,12 @@ describe('useLiveQuery React hook', () => {
 
         const { result, rerender } = renderHook(
             ({ filter }) =>
-                useLiveQuery(
-                    async (db) => {
-                        return db
-                            .table('items')
-                            .jsFilter((i: any) => i.name.includes(filter))
-                            .toArray();
-                    },
-                    [filter],
-                ),
+                useLiveQuery(db, async () => {
+                    return db
+                        .table('items')
+                        .jsFilter((i: any) => i.name.includes(filter))
+                        .toArray();
+                }, [filter]),
             {
                 initialProps: { filter: 'alice' },
             },
@@ -237,7 +220,8 @@ describe('useLiveQuery React hook', () => {
 
         const { result } = renderHook(() =>
             useLiveQuery(
-                (db) => {
+                db,
+                () => {
                     queryRunCount++;
                     return db.table('items').toArray();
                 },
@@ -278,7 +262,8 @@ describe('useLiveQuery React hook', () => {
 
         const { result } = renderHook(() =>
             useLiveQuery(
-                (db) => {
+                db,
+                () => {
                     queryRunCount++;
                     return db.table('items').toArray();
                 },
@@ -305,25 +290,17 @@ describe('useLiveQuery React hook', () => {
 });
 
 describe('useLiveQuery with non-synced tables', () => {
-    let useLiveQuery: ReturnType<typeof makeDync>['useLiveQuery'];
-    let db: ReturnType<typeof makeDync>['db'];
+    let db: Dync<any>;
     let consoleErrorSpy: ReturnType<typeof vi.spyOn> | undefined;
 
     beforeEach(async () => {
         const logger = createSilentLogger();
 
         // Create a Dync instance with NO sync APIs - purely local storage
-        const dync = makeDync({
-            databaseName: 'non-synced-db',
-            syncApis: {}, // No sync APIs
-            storageAdapter: new MemoryAdapter('non-synced-db'),
-            options: {
-                logger,
-                minLogLevel: 'none',
-            },
+        db = new Dync<any>('non-synced-db', {}, new MemoryAdapter('non-synced-db'), {
+            logger,
+            minLogLevel: 'none',
         });
-        db = dync.db;
-        useLiveQuery = dync.useLiveQuery;
 
         // Define a non-synced table
         db.version(1).stores({
@@ -345,7 +322,7 @@ describe('useLiveQuery with non-synced tables', () => {
     });
 
     it('useLiveQuery works with non-synced tables', async () => {
-        const { result } = renderHook(() => useLiveQuery((db) => db.table('localNotes').toArray()));
+        const { result } = renderHook(() => useLiveQuery(db, () => db.table('localNotes').toArray()));
 
         await waitFor(() => {
             expect(result.current).toEqual([]);
@@ -363,7 +340,7 @@ describe('useLiveQuery with non-synced tables', () => {
     });
 
     it('non-synced table mutations emit events for all CRUD operations', async () => {
-        const { result } = renderHook(() => useLiveQuery((db) => db.table('localNotes').count()));
+        const { result } = renderHook(() => useLiveQuery(db, () => db.table('localNotes').count()));
 
         await waitFor(() => {
             expect(result.current).toBe(0);
@@ -381,7 +358,7 @@ describe('useLiveQuery with non-synced tables', () => {
             await db.table('localNotes').update(key!, { title: 'Updated Note' });
         });
         // Count stays same but hook re-ran (we can verify via get)
-        const { result: getResult } = renderHook(() => useLiveQuery((db) => db.table('localNotes').get(key!)));
+        const { result: getResult } = renderHook(() => useLiveQuery(db, () => db.table('localNotes').get(key!)));
         await waitFor(() => {
             expect(getResult.current?.title).toBe('Updated Note');
         });
@@ -394,7 +371,7 @@ describe('useLiveQuery with non-synced tables', () => {
     });
 
     it('non-synced table bulk operations emit mutations', async () => {
-        const { result } = renderHook(() => useLiveQuery((db) => db.table('localNotes').count()));
+        const { result } = renderHook(() => useLiveQuery(db, () => db.table('localNotes').count()));
 
         await waitFor(() => {
             expect(result.current).toBe(0);
