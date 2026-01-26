@@ -10,3 +10,6 @@ coverage
 # Playwright test artifacts
 tests/playwright-report/
 tests/test-results/
+
+# Benchmark artifacts
+benchmarks/results

@@ -1,0 +1,17 @@
+{
+  "name": "benchmarks",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "benchmark": "tsx query.benchmark.ts",
+    "benchmark:query": "tsx query.benchmark.ts"
+  },
+  "devDependencies": {
+    "tinybench": "^6.0.0",
+    "tsx": "^4.19.0",
+    "sql.js": "1.13.0",
+    "fake-indexeddb": "6.2.5",
+    "@types/node": "^25.0.10"
+  }
+}

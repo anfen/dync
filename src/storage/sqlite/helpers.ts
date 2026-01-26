@@ -132,10 +132,28 @@ const buildCondition = (condition: SQLiteCondition): BuiltCondition => {
 };
 
 export const cloneValue = <T>(value: T): T => {
+    // Fast path for null/undefined/primitives
+    if (value == null || typeof value !== 'object') return value;
+
+    // Fast path for flat objects (common case for SQLite records)
+    if (!Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype) {
+        const obj = value as Record<string, unknown>;
+        let isFlat = true;
+        for (const key in obj) {
+            const v = obj[key];
+            if (v !== null && typeof v === 'object') {
+                isFlat = false;
+                break;
+            }
+        }
+        if (isFlat) return { ...obj } as T;
+    }
+
+    // Deep clone for arrays/nested objects
     if (typeof globalThis.structuredClone === 'function') {
         return globalThis.structuredClone(value);
     }
-    return JSON.parse(JSON.stringify(value ?? null)) as T;
+    return JSON.parse(JSON.stringify(value)) as T;
 };
 
 export const quoteIdentifier = (name: string): string => `"${name.replace(/"/g, '""')}"`;

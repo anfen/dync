@@ -2,6 +2,7 @@ packages:
   - examples/*
   - tests
   - size
+  - benchmarks
 
 nodeLinker: hoisted
 
