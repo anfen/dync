@@ -122,35 +122,9 @@ export interface SyncOptions {
     conflictResolutionStrategy?: ConflictResolutionStrategy;
 }
 
-/**
- * Configuration options for creating a Dync instance.
- *
- * @example Per-table sync mode
- * ```ts
- * const db = new Dync<Store>({
- *     databaseName: 'my-app',
- *     storageAdapter: new SQLiteAdapter(driver),
- *     sync: { todos: todoSyncApi },
- * });
- * ```
- *
- * @example Batch sync mode
- * ```ts
- * const db = new Dync<Store>({
- *     databaseName: 'my-app',
- *     storageAdapter: new SQLiteAdapter(driver),
- *     sync: { syncTables: ['todos'], push, pull },
- * });
- * ```
- */
 export interface DyncOptions<TStoreMap extends Record<string, any> = Record<string, any>> {
     databaseName: string;
     storageAdapter: StorageAdapter;
-    /**
-     * Sync configuration - either per-table APIs or batch sync.
-     * Per-table: `{ tableName: { add, update, remove, list } }`
-     * Batch: `{ syncTables: [...], push, pull }`
-     */
     sync: Partial<Record<keyof TStoreMap, ApiFunctions>> | BatchSync;
     options?: SyncOptions;
 }
@@ -167,7 +141,7 @@ export type FirstLoadProgressCallback = (progress: FirstLoadProgress) => void;
 export type SyncApi = {
     enable: (enabled: boolean) => Promise<void>;
     startFirstLoad: (onProgress?: FirstLoadProgressCallback) => Promise<void>;
-    /** Current sync state - use useSyncState() hook for reactive updates in React */
+    // Current sync state - use useSyncState() hook for reactive updates in React
     readonly state: SyncState;
     resolveConflict: (localId: string, keepLocal: boolean) => Promise<void>;
     onStateChange: (fn: (state: SyncState) => void) => () => void;

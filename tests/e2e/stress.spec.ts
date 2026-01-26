@@ -141,9 +141,14 @@ test.describe('Browser Persistence Tests', () => {
             const driver = new WaSqliteDriver(dbName, { vfs: 'IDBBatchAtomicVFS' });
             const adapter = new SQLiteAdapter(driver);
 
-            const db = new Dync(dbName, { test_items: mockApi }, adapter, {
-                syncInterval: 1000,
-                minLogLevel: 'none',
+            const db = new Dync({
+                databaseName: dbName,
+                storageAdapter: adapter,
+                sync: { test_items: mockApi },
+                options: {
+                    syncInterval: 1000,
+                    minLogLevel: 'none',
+                },
             });
 
             db.version(1).stores({
@@ -194,9 +199,14 @@ test.describe('Browser Persistence Tests', () => {
             const driver = new WaSqliteDriver(dbName, { vfs: 'IDBBatchAtomicVFS' });
             const adapter = new SQLiteAdapter(driver);
 
-            const db = new Dync(dbName, { test_items: mockApi }, adapter, {
-                syncInterval: 1000,
-                minLogLevel: 'none',
+            const db = new Dync({
+                databaseName: dbName,
+                storageAdapter: adapter,
+                sync: { test_items: mockApi },
+                options: {
+                    syncInterval: 1000,
+                    minLogLevel: 'none',
+                },
             });
 
             db.version(1).stores({
