@@ -39,7 +39,7 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
             if (ctx instanceof DexieQueryContext) {
                 return await ctx.table('items').where('value').startsWithIgnoreCase('dexie').toArray();
             } else if (ctx instanceof SqliteQueryContext) {
-                return await ctx.queryRows('SELECT * FROM items WHERE value LIKE ? COLLATE NOCASE', ['sqlite%']);
+                return await ctx.queryRows('SELECT * FROM items WHERE value LIKE ?', ['sqlite%']);
             }
         });
         ```
