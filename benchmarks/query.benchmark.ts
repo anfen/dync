@@ -7,178 +7,35 @@
  * Run with: pnpm benchmark
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { createRequire } from 'node:module';
 import { Bench } from 'tinybench';
 
 // Polyfill IndexedDB for Node.js (required for Dexie)
 import 'fake-indexeddb/auto';
 
-import { Dync, type ApiFunctions } from '../src/index';
+import { Dync } from '../src/index';
 import { DexieAdapter } from '../src/storage/dexie';
 import { MemoryAdapter } from '../src/storage/memory';
 import { SQLiteAdapter } from '../src/storage/sqlite';
 import type { StorageAdapter } from '../src/storage/types';
-import type { SQLiteDatabaseDriver, SQLiteRunResult, SQLiteQueryResult } from '../src/storage/sqlite/types';
-import type { SyncedRecord } from '../src/types';
 
-// ============================================================================
-// sql.js Driver (same as test helper)
-// ============================================================================
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - sql.js doesn't have proper types
-import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js';
-
-interface SqlJsDriverOptions {
-    locateFile?: (file: string) => string;
-}
-
-class SqlJsDriver implements SQLiteDatabaseDriver {
-    readonly type = 'SqlJsDriver';
-    private db?: SqlJsDatabase;
-    private initializing?: Promise<void>;
-    private readonly options: SqlJsDriverOptions;
-    readonly name: string;
-
-    constructor(name: string, options: SqlJsDriverOptions = {}) {
-        this.name = name;
-        this.options = options;
-    }
-
-    async open(): Promise<void> {
-        if (this.db) return;
-        if (!this.initializing) {
-            this.initializing = (async () => {
-                const sql = await initSqlJs({
-                    locateFile: this.options.locateFile,
-                });
-                this.db = new sql.Database();
-            })();
-        }
-        await this.initializing;
-        this.initializing = undefined;
-    }
-
-    async close(): Promise<void> {
-        if (this.db) {
-            this.db.close();
-            this.db = undefined;
-        }
-    }
-
-    async run(sql: string, params?: unknown[]): Promise<SQLiteRunResult> {
-        if (!this.db) throw new Error('Database not open');
-        this.db.run(sql, params as (string | number | Uint8Array | null | undefined)[]);
-        return { changes: this.db.getRowsModified() };
-    }
-
-    async query(sql: string, params?: unknown[]): Promise<SQLiteQueryResult> {
-        if (!this.db) throw new Error('Database not open');
-        const stmt = this.db.prepare(sql);
-        stmt.bind(params as (string | number | Uint8Array | null | undefined)[]);
-        const columns = stmt.getColumnNames();
-        const values: unknown[][] = [];
-        while (stmt.step()) {
-            values.push(stmt.get());
-        }
-        stmt.free();
-        return { columns, values };
-    }
-
-    async execute(sql: string): Promise<void> {
-        if (!this.db) throw new Error('Database not open');
-        this.db.exec(sql);
-    }
-}
-
-const locateSqlJsFile = (() => {
-    try {
-        const require = createRequire(import.meta.url);
-        const wasmPath = require.resolve('sql.js/dist/sql-wasm.wasm');
-        const dir = path.dirname(wasmPath);
-        return (file: string) => path.join(dir, file);
-    } catch {
-        return (file: string) => file;
-    }
-})();
-
-const createSqlJsDriver = (name: string): SQLiteDatabaseDriver => {
-    return new SqlJsDriver(name, { locateFile: locateSqlJsFile });
-};
-
-// ============================================================================
-// Test Schema & Data
-// ============================================================================
-
-interface Contact extends SyncedRecord {
-    name: string;
-    email: string;
-    company: string;
-    department: string;
-    role: string;
-    age: number;
-    active: boolean;
-    country: string;
-}
-
-type BenchmarkSchema = Record<string, Contact> & {
-    contacts: Contact;
-};
-
-// SQLite structured schema
-const structuredSchema = {
-    contacts: {
-        columns: {
-            name: { type: 'TEXT' as const },
-            email: { type: 'TEXT' as const },
-            company: { type: 'TEXT' as const },
-            department: { type: 'TEXT' as const },
-            role: { type: 'TEXT' as const },
-            age: { type: 'INTEGER' as const },
-            active: { type: 'BOOLEAN' as const },
-            country: { type: 'TEXT' as const },
-        },
-    },
-};
-
-// Dexie string schema
-const dexieSchema = {
-    contacts: 'name, email, company, department, role, age, active, country',
-};
-
-// Dummy APIs - we're not testing sync, just queries
-const dummyApis: Record<string, ApiFunctions> = {
-    contacts: {
-        add: async () => ({ id: 1, updated_at: new Date().toISOString() }),
-        update: async () => true,
-        remove: async () => {},
-        list: async () => [],
-    },
-};
-
-const companies = ['Acme Corp', 'TechStart', 'GlobalInc', 'DataFlow', 'CloudNine', 'ByteWorks', 'NetSphere', 'CodeCraft'];
-const departments = ['Engineering', 'Sales', 'Marketing', 'Support', 'HR', 'Finance', 'Legal', 'Operations'];
-const roles = ['Engineer', 'Manager', 'Director', 'VP', 'Analyst', 'Specialist', 'Coordinator', 'Lead'];
-const countries = ['USA', 'UK', 'Germany', 'France', 'Japan', 'Australia', 'Canada', 'Brazil'];
-
-const generateContacts = (count: number): Omit<Contact, '_localId' | 'updated_at'>[] => {
-    const contacts: Omit<Contact, '_localId' | 'updated_at'>[] = [];
-    for (let i = 0; i < count; i++) {
-        contacts.push({
-            name: `Contact ${i}`,
-            email: `contact${i}@${companies[i % companies.length]!.toLowerCase().replace(' ', '')}.com`,
-            company: companies[i % companies.length]!,
-            department: departments[i % departments.length]!,
-            role: roles[i % roles.length]!,
-            age: 22 + (i % 45),
-            active: i % 3 !== 0,
-            country: countries[i % countries.length]!,
-        });
-    }
-    return contacts;
-};
+import {
+    createSqlJsDriver,
+    type Contact,
+    type BenchmarkSchema,
+    structuredSchema,
+    dexieSchema,
+    dummyApis,
+    generateContacts,
+    RECORD_COUNT,
+    WARMUP_ITERATIONS,
+    BENCHMARK_ITERATIONS,
+    log,
+    tryGC,
+    logSuiteHeader,
+    logBenchmarkHeader,
+    printResults,
+    writeResultsFile,
+} from './helpers';
 
 // ============================================================================
 // Adapter Scenarios
@@ -230,35 +87,16 @@ async function createBenchmarkDync(scenario: AdapterScenario) {
 // Benchmark Runner
 // ============================================================================
 
-const RECORD_COUNT = 1_000; // Reduced from 10,000 to prevent OOM
-const WARMUP_ITERATIONS = 3;
-const BENCHMARK_ITERATIONS = 50; // Reduced iterations
-const RESULTS_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), 'results');
-
-// Output collection for file writing
-const output: string[] = [];
-function log(message: string) {
-    console.log(message);
-    output.push(message);
-}
-
-// Helper to hint GC (if available)
-function tryGC() {
-    if (typeof global !== 'undefined' && typeof (global as any).gc === 'function') {
-        (global as any).gc();
-    }
-}
-
 async function runBenchmarks() {
     const startTime = new Date();
     const timestamp = startTime.toISOString().replace(/[:.]/g, '-');
 
-    log('╔════════════════════════════════════════════════════════════════════╗');
-    log('║           Dync Query Performance Benchmark                         ║');
-    log('╠════════════════════════════════════════════════════════════════════╣');
-    log(`║  Records: ${RECORD_COUNT.toLocaleString().padEnd(10)} Warmup iterations: ${WARMUP_ITERATIONS.toString().padEnd(18)}║`);
-    log(`║  Started: ${startTime.toISOString().padEnd(55)}║`);
-    log('╚════════════════════════════════════════════════════════════════════╝\n');
+    logSuiteHeader({
+        title: 'Dync Query Performance Benchmark',
+        recordCount: RECORD_COUNT,
+        warmupIterations: WARMUP_ITERATIONS,
+        startTime,
+    });
 
     const contactData = generateContacts(RECORD_COUNT);
 
@@ -287,15 +125,16 @@ async function runBenchmarks() {
     log('\n');
 
     // ========================================================================
-    // Benchmark 1: Complex chained OR query (the query discussed)
+    // Benchmark 1: Complex chained OR query
     // ========================================================================
-    log('┌────────────────────────────────────────────────────────────────────┐');
-    log('│  #1 Benchmark: Complex chained .or() query                         │');
-    log('│  Query: where("name").startsWith("Contact 1")                      │');
-    log('│         .or("name").startsWith("Contact 2")                        │');
-    log('│         .or("name").startsWith("Contact 3")                        │');
-    log('│         .toArray()                                                 │');
-    log('└────────────────────────────────────────────────────────────────────┘\n');
+    logBenchmarkHeader(
+        {
+            number: 1,
+            name: 'Complex chained .or() query',
+            queryLines: ['where("name").startsWith("Contact 1")', '.or("name").startsWith("Contact 2")', '.or("name").startsWith("Contact 3")', '.toArray()'],
+        },
+        false,
+    );
 
     const bench1 = new Bench({ warmupIterations: WARMUP_ITERATIONS, iterations: BENCHMARK_ITERATIONS });
 
@@ -315,13 +154,16 @@ async function runBenchmarks() {
     // ========================================================================
     // Benchmark 2: Case-insensitive search with OR
     // ========================================================================
-    log('\n┌────────────────────────────────────────────────────────────────────┐');
-    log('│  #2 Benchmark: Case-insensitive chained .or() query                │');
-    log('│  Query: where("company").startsWithIgnoreCase("acme")              │');
-    log('│         .or("company").startsWithIgnoreCase("tech")                │');
-    log('│         .or("company").startsWithIgnoreCase("data")                │');
-    log('│         .toArray()                                                 │');
-    log('└────────────────────────────────────────────────────────────────────┘\n');
+    logBenchmarkHeader({
+        number: 2,
+        name: 'Case-insensitive chained .or() query',
+        queryLines: [
+            'where("company").startsWithIgnoreCase("acme")',
+            '.or("company").startsWithIgnoreCase("tech")',
+            '.or("company").startsWithIgnoreCase("data")',
+            '.toArray()',
+        ],
+    });
 
     const bench2 = new Bench({ warmupIterations: WARMUP_ITERATIONS, iterations: BENCHMARK_ITERATIONS });
 
@@ -348,10 +190,11 @@ async function runBenchmarks() {
     // ========================================================================
     // Benchmark 3: Simple equality query (baseline)
     // ========================================================================
-    log('\n┌────────────────────────────────────────────────────────────────────┐');
-    log('│  #3 Benchmark: Simple equality query (baseline)                    │');
-    log('│  Query: where("company").equals("Acme Corp").toArray()             │');
-    log('└────────────────────────────────────────────────────────────────────┘\n');
+    logBenchmarkHeader({
+        number: 3,
+        name: 'Simple equality query (baseline)',
+        queryLines: ['where("company").equals("Acme Corp").toArray()'],
+    });
 
     const bench3 = new Bench({ warmupIterations: WARMUP_ITERATIONS, iterations: BENCHMARK_ITERATIONS });
 
@@ -371,10 +214,11 @@ async function runBenchmarks() {
     // ========================================================================
     // Benchmark 4: Full table toArray()
     // ========================================================================
-    log('\n┌────────────────────────────────────────────────────────────────────┐');
-    log('│  #4 Benchmark: Full table toArray()                                │');
-    log('│  Query: table.toArray()                                            │');
-    log('└────────────────────────────────────────────────────────────────────┘\n');
+    logBenchmarkHeader({
+        number: 4,
+        name: 'Full table toArray()',
+        queryLines: ['table.toArray()'],
+    });
 
     const bench4 = new Bench({ warmupIterations: WARMUP_ITERATIONS, iterations: 20 });
 
@@ -394,11 +238,11 @@ async function runBenchmarks() {
     // ========================================================================
     // Benchmark 5: anyOf query
     // ========================================================================
-    log('\n┌────────────────────────────────────────────────────────────────────┐');
-    log('│  #5 Benchmark: anyOf() query                                       │');
-    log('│  Query: where("department").anyOf(["Engineering", "Sales", "HR"])  │');
-    log('│         .toArray()                                                 │');
-    log('└────────────────────────────────────────────────────────────────────┘\n');
+    logBenchmarkHeader({
+        number: 5,
+        name: 'anyOf() query',
+        queryLines: ['where("department").anyOf(["Engineering", "Sales", "HR"])', '.toArray()'],
+    });
 
     const bench5 = new Bench({ warmupIterations: WARMUP_ITERATIONS, iterations: BENCHMARK_ITERATIONS });
 
@@ -418,10 +262,11 @@ async function runBenchmarks() {
     // ========================================================================
     // Benchmark 6: Count query
     // ========================================================================
-    log('\n┌────────────────────────────────────────────────────────────────────┐');
-    log('│  #6 Benchmark: count() query                                       │');
-    log('│  Query: where("active").equals(true).count()                       │');
-    log('└────────────────────────────────────────────────────────────────────┘\n');
+    logBenchmarkHeader({
+        number: 6,
+        name: 'count() query',
+        queryLines: ['where("active").equals(true).count()'],
+    });
 
     const bench6 = new Bench({ warmupIterations: WARMUP_ITERATIONS, iterations: BENCHMARK_ITERATIONS });
 
@@ -446,43 +291,7 @@ async function runBenchmarks() {
     log('Done!\n');
 
     // Write results to file
-    if (!fs.existsSync(RESULTS_DIR)) {
-        fs.mkdirSync(RESULTS_DIR, { recursive: true });
-    }
-    const resultsFile = path.join(RESULTS_DIR, `${timestamp}.txt`);
-    fs.writeFileSync(resultsFile, output.join('\n'), 'utf-8');
-    console.log(`Results saved to: ${resultsFile}`);
-}
-
-function printResults(bench: Bench) {
-    const tasks = bench.tasks;
-
-    // Sort by ops/sec (fastest first)
-    const sorted = [...tasks].sort((a, b) => {
-        const aHz = a.result?.hz ?? 0;
-        const bHz = b.result?.hz ?? 0;
-        return bHz - aHz;
-    });
-
-    const fastest = sorted[0];
-    const fastestHz = fastest?.result?.hz ?? 1;
-
-    log('Results (sorted by ops/sec, fastest first):');
-    log('─'.repeat(72));
-    log(`${'Adapter'.padEnd(28)} ${'ops/sec'.padStart(12)} ${'avg (ms)'.padStart(12)} ${'relative'.padStart(12)}`);
-    log('─'.repeat(72));
-
-    for (const task of sorted) {
-        const result = task.result;
-        if (!result || result.hz === undefined) continue;
-
-        const hz = result.hz;
-        const mean = result.mean * 1000; // Convert to ms
-        const relative = hz / fastestHz;
-        const relativeStr = relative === 1 ? 'fastest' : `${relative.toFixed(2)}x slower`;
-
-        log(`${task.name.padEnd(28)} ${hz.toFixed(2).padStart(12)} ${mean.toFixed(3).padStart(12)} ${relativeStr.padStart(12)}`);
-    }
+    writeResultsFile(timestamp);
 }
 
 // Run the benchmarks
