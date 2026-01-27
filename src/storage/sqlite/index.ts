@@ -3,7 +3,7 @@ export * from './helpers';
 export * from './SQLiteCollection';
 export * from './SQLiteWhereClause';
 export * from './SQLiteTable';
-export * from './SqliteQueryContext';
+export * from './SQLiteQueryContext';
 export * from './SQLiteAdapter';
 
 // Drivers

@@ -1,13 +1,12 @@
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { describe, expect, it, vi } from 'vitest';
+import { Dync } from '../../../src/index';
 import { SQLiteAdapter } from '../../../src/storage/sqlite';
 import { createSqlJsDriver } from '../../helpers/sqlJsDriver';
 import type { ApiFunctions, SyncedRecord } from '../../../src/types';
 import { createTestDync, runSyncCycle } from '../../helpers/dyncHarness';
 import type { SQLiteTableDefinition } from '../../../src/storage/sqlite/schema';
-import type { StorageSchemaDefinitionOptions } from '../../../src/storage/sqlite/types';
-import { createLocalId } from '../../../src/helpers';
 
 interface SQLiteSchema {
     items: { value: string } & Partial<SyncedRecord>;
@@ -135,80 +134,114 @@ describe('SQLiteAdapter', () => {
         await db.close();
     });
 
-    it('runs sqlite migrations on upgrades and downgrades', async () => {
-        const driver = createSqlJsDriver('migration-db', { locateFile: locateSqlJsFile });
+    it('runs sqlite migrations on upgrades and downgrades via Dync .sqlite() API', async () => {
+        const dbName = `dync-migration-${Math.random().toString(36).slice(2)}`;
+        const driver = createSqlJsDriver(dbName, { locateFile: locateSqlJsFile });
         const adapter = new SQLiteAdapter(driver);
 
-        // Include _dync_state table as dync would when initializing
-        const stateTableSchema: SQLiteTableDefinition = {
-            columns: {
-                _localId: { type: 'TEXT' },
-                value: { type: 'TEXT' },
-            },
-        };
-
-        const version1Schema: Record<string, SQLiteTableDefinition> = {
-            _dync_state: stateTableSchema,
-            widgets: {
-                columns: {
-                    _localId: { type: 'TEXT' },
-                    id: { type: 'TEXT', unique: true },
-                    name: { type: 'TEXT' },
-                },
-            },
-        };
-
-        adapter.defineSchema(1, version1Schema);
-        await adapter.open();
-        const localId = createLocalId();
-        await adapter.table('widgets').add({ _localId: localId, id: 'one', name: 'alpha' });
-
         const upgradeSpy = vi.fn(async (ctx) => {
-            await ctx.execute('ALTER TABLE "widgets" ADD COLUMN "description" TEXT');
+            // execute - DDL statements for schema changes
+            await ctx.execute('ALTER TABLE "widgets" ADD COLUMN "priority" INTEGER DEFAULT 0');
+
+            // query - read existing data to transform
+            const urgent = await ctx.query('SELECT "_localId" FROM "widgets" WHERE "name" LIKE ?', ['%urgent%']);
+
+            // run - update rows based on query results
+            for (const row of urgent.values) {
+                await ctx.run('UPDATE "widgets" SET "priority" = ? WHERE "_localId" = ?', [10, row[0]]);
+            }
         });
         const downgradeSpy = vi.fn(async (ctx) => {
-            await ctx.run('UPDATE "widgets" SET "description" = NULL');
+            // SQLite doesn't support DROP COLUMN easily, null out the data instead
+            await ctx.run('UPDATE "widgets" SET "priority" = NULL');
         });
 
-        const version2Schema: Record<string, SQLiteTableDefinition> = {
-            _dync_state: stateTableSchema,
+        interface WidgetsSchemaV1 {
+            widgets: { name: string };
+        }
+
+        interface WidgetsSchemaV2 {
+            widgets: { name: string; priority?: number };
+        }
+
+        // --- Version 1: Initial schema using Dync ---
+        const db = new Dync<WidgetsSchemaV1>({
+            databaseName: dbName,
+            storageAdapter: adapter,
+        });
+
+        db.version(1).stores({
             widgets: {
                 columns: {
-                    _localId: { type: 'TEXT' },
-                    id: { type: 'TEXT', unique: true },
                     name: { type: 'TEXT' },
-                    description: { type: 'TEXT' },
                 },
             },
-        };
+        });
 
-        const version2Options: StorageSchemaDefinitionOptions = {};
-        adapter.defineSchema(2, version2Schema, version2Options);
-        const sqliteOptions = (version2Options.sqlite ??= {});
-        const migrations = (sqliteOptions.migrations ??= {});
-        migrations.upgrade = upgradeSpy;
-        migrations.downgrade = downgradeSpy;
+        await db.open();
 
+        // Add initial data at v1 - one normal widget, one urgent
+        const localId = await db.widgets.add({ name: 'alpha' });
+        const urgentLocalId = await db.widgets.add({ name: 'urgent-task' });
+        const widgetV1 = await db.widgets.get(localId);
+        expect(widgetV1?.name).toBe('alpha');
+
+        // Verify priority column doesn't exist yet
+        const v1Columns = await driver.query('PRAGMA table_info("widgets")');
+        const v1ColumnNames = (v1Columns.values ?? []).map((row) => row[1]);
+        expect(v1ColumnNames).not.toContain('priority');
+
+        // --- Version 2: Add priority column using .sqlite() fluent API ---
+        (db as unknown as Dync<WidgetsSchemaV2>)
+            .version(2)
+            .stores({
+                widgets: {
+                    columns: {
+                        name: { type: 'TEXT' },
+                        priority: { type: 'INTEGER' },
+                    },
+                },
+            })
+            .sqlite((builder) => {
+                builder.up(upgradeSpy);
+                builder.down(downgradeSpy);
+            });
+
+        // Trigger upgrade by calling adapter.open() (Dync caches its openPromise)
         await adapter.open();
+
+        // Verify upgrade handler was called
         expect(upgradeSpy).toHaveBeenCalledTimes(1);
-        expect(upgradeSpy).toHaveBeenCalledWith(expect.objectContaining({ direction: 'upgrade', fromVersion: 1, toVersion: 2 }));
 
-        await adapter.table('widgets').put({ _localId: localId, id: 'one', name: 'alpha', description: 'beta' });
-        const upgraded = await adapter.table('widgets').get(localId);
-        expect(upgraded?.description).toBe('beta');
+        // Verify priority column now exists
+        const v2Columns = await driver.query('PRAGMA table_info("widgets")');
+        const v2ColumnNames = (v2Columns.values ?? []).map((row) => row[1]);
+        expect(v2ColumnNames).toContain('priority');
 
+        // Verify migration logic: urgent widget should have priority 10, normal should have 0
+        const urgentWidget = await adapter.table('widgets').get(urgentLocalId);
+        expect(urgentWidget?.name).toBe('urgent-task');
+        expect(urgentWidget?.priority).toBe(10); // Set by migration query+run
+
+        const normalWidget = await adapter.table('widgets').get(localId);
+        expect(normalWidget?.name).toBe('alpha');
+        expect(normalWidget?.priority).toBe(0); // Default from ALTER TABLE
+
+        // --- Downgrade: Remove v2 schema to trigger downgrade ---
         (adapter as any).versionSchemas.delete(2);
         (adapter as any).refreshActiveSchema();
 
         await adapter.open();
+
+        // Verify downgrade handler was called
         expect(downgradeSpy).toHaveBeenCalledTimes(1);
-        expect(downgradeSpy).toHaveBeenCalledWith(expect.objectContaining({ direction: 'downgrade', fromVersion: 2, toVersion: 1 }));
 
-        const downgradedTable = adapter.table('widgets');
-        const downgraded = await downgradedTable.get(localId);
-        expect(downgraded?.description).toBeUndefined();
+        // Verify data after downgrade - priority should be nulled by migration
+        const widgetAfterDowngrade = await adapter.table('widgets').get(localId);
+        expect(widgetAfterDowngrade?.name).toBe('alpha');
+        expect(widgetAfterDowngrade?.priority).toBeUndefined();
 
-        await adapter.close();
+        await db.close();
     });
 
     it('auto-injects updated_at index for sync tables', async () => {

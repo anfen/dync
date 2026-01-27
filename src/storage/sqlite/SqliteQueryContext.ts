@@ -2,7 +2,7 @@ import type { StorageTable, StorageTransactionContext, TransactionMode } from '.
 import type { SQLiteDatabaseDriver, SQLiteRunResult } from './types';
 import { SQLiteAdapter } from './SQLiteAdapter';
 
-export class SqliteQueryContext {
+export class SQLiteQueryContext {
     constructor(
         private readonly driver: SQLiteDatabaseDriver,
         private readonly adapter: SQLiteAdapter,

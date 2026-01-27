@@ -128,12 +128,7 @@ export interface SQLiteDatabaseDriver {
     query(statement: string, values?: any[]): Promise<SQLiteQueryResult>;
 }
 
-export type SQLiteMigrationDirection = 'upgrade' | 'downgrade';
-
 export interface SQLiteMigrationContext {
-    direction: SQLiteMigrationDirection;
-    fromVersion: number;
-    toVersion: number;
     execute: (statement: string) => Promise<void>;
     run: (statement: string, values?: any[]) => Promise<SQLiteRunResult>;
     query: (statement: string, values?: any[]) => Promise<SQLiteQueryResult>;
@@ -142,13 +137,13 @@ export interface SQLiteMigrationContext {
 export type SQLiteMigrationHandler = (context: SQLiteMigrationContext) => Promise<void> | void;
 
 export interface SQLiteVersionMigration {
-    upgrade?: SQLiteMigrationHandler;
-    downgrade?: SQLiteMigrationHandler;
+    up?: SQLiteMigrationHandler;
+    down?: SQLiteMigrationHandler;
 }
 
 export interface SQLiteVersionConfigurator {
-    upgrade(handler: SQLiteMigrationHandler): void;
-    downgrade(handler: SQLiteMigrationHandler): void;
+    up(handler: SQLiteMigrationHandler): void;
+    down(handler: SQLiteMigrationHandler): void;
 }
 
 export interface SQLiteSchemaDefinitionOptions {

@@ -2,7 +2,7 @@ export * from './index.shared';
 export { MemoryAdapter } from './storage/memory';
 export { SQLiteAdapter } from './storage/sqlite';
 export { MemoryQueryContext } from './storage/memory';
-export { SqliteQueryContext } from './storage/sqlite';
+export { SQLiteQueryContext } from './storage/sqlite';
 export type { SQLiteDatabaseDriver, SQLiteQueryResult, SQLiteRunResult } from './storage/sqlite/types';
 export type { StorageAdapter } from './storage/types';
 export { SyncAction } from './types';

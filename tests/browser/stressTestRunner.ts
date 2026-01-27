@@ -148,7 +148,7 @@ const sqliteSchema: Record<keyof StressTables, TableSchemaDefinition> = {
 export async function runStressTest(
     adapterFactory: StorageAdapterFactory,
     options: StressTestOptions = {},
-    useSqliteSchema = false,
+    useSQLiteSchema = false,
 ): Promise<StressTestResult> {
     const { opCount = 2000, errorRate = 0.06, maxDelayMs = 40, syncInterval = 15, timeoutMs = 180_000 } = options;
 
@@ -157,10 +157,10 @@ export async function runStressTest(
 
     try {
         const { apis, server } = makeFaultyApis({ errorRate, maxDelayMs });
-        const schema = useSqliteSchema ? sqliteSchema : dexieSchema;
+        const schema = useSQLiteSchema ? sqliteSchema : dexieSchema;
         const dbName = `stress-browser-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-        // Create adapter (may be async for WaSqlite)
+        // Create adapter (may be async for WaSQLite)
         const adapter = await adapterFactory(dbName);
 
         const syncOptions: SyncOptions = {

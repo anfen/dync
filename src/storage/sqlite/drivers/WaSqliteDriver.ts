@@ -6,7 +6,7 @@ import type { SQLiteDatabaseDriver, SQLiteQueryResult, SQLiteRunResult } from '.
  *
  * @see https://github.com/rhashimoto/wa-sqlite/tree/master/src/examples#vfs-comparison
  */
-export type WaSqliteVfsType =
+export type WaSQLiteVfsType =
     /**
      * IDBBatchAtomicVFS - IndexedDB-backed storage
      * - Works on ALL contexts (Window, Worker, SharedWorker, service worker)
@@ -45,14 +45,14 @@ export type WaSqliteVfsType =
     | 'AccessHandlePoolVFS';
 
 /**
- * Options for configuring the WaSqliteDriver.
+ * Options for configuring the WaSQLiteDriver.
  */
-export interface WaSqliteDriverOptions {
+export interface WaSQLiteDriverOptions {
     /**
      * Virtual File System to use for storage.
      * @default 'IDBBatchAtomicVFS'
      */
-    vfs?: WaSqliteVfsType;
+    vfs?: WaSQLiteVfsType;
 
     /**
      * Directory path for the database in OPFS VFS modes.
@@ -96,22 +96,22 @@ export interface WaSqliteDriverOptions {
 }
 
 // Internal VFS interface for lifecycle management
-interface WaSqliteVFS {
+interface WaSQLiteVFS {
     close(): Promise<void>;
     name: string;
 }
 
 // VFS class type with static create method
 interface VFSClass {
-    create(name: string, module: any, options?: any): Promise<WaSqliteVFS>;
+    create(name: string, module: any, options?: any): Promise<WaSQLiteVFS>;
 }
 
 // Cached module factory and instance
 let cachedModuleFactory: (() => Promise<any>) | null = null;
 let cachedModule: any = null;
-let cachedSqlite3: any = null;
+let cachedSQLite3: any = null;
 // Track VFS instances by name to avoid re-registering
-const registeredVFS = new Map<string, WaSqliteVFS>();
+const registeredVFS = new Map<string, WaSQLiteVFS>();
 
 /**
  * SQLite driver for web browsers using wa-sqlite with IndexedDB or OPFS persistence.
@@ -138,30 +138,30 @@ const registeredVFS = new Map<string, WaSqliteVFS>();
  *
  * @example
  * ```ts
- * import { WaSqliteDriver } from '@anfenn/dync/wa-sqlite';
+ * import { WaSQLiteDriver } from '@anfenn/dync/wa-sqlite';
  * import { SQLiteAdapter } from '@anfenn/dync';
  *
  * // Default: IDBBatchAtomicVFS (works in main thread, multi-tab safe)
- * const driver = new WaSqliteDriver('myapp.db');
+ * const driver = new WaSQLiteDriver('myapp.db');
  *
  * // For OPFS (faster, requires Worker, filesystem transparent)
- * const opfsDriver = new WaSqliteDriver('myapp.db', { vfs: 'OPFSCoopSyncVFS' });
+ * const opfsDriver = new WaSQLiteDriver('myapp.db', { vfs: 'OPFSCoopSyncVFS' });
  *
  * const adapter = new SQLiteAdapter('myapp', driver);
  * ```
  */
-export class WaSqliteDriver implements SQLiteDatabaseDriver {
-    readonly type = 'WaSqliteDriver';
+export class WaSQLiteDriver implements SQLiteDatabaseDriver {
+    readonly type = 'WaSQLiteDriver';
     private db: number | null = null;
     private sqlite3: any = null;
-    private readonly options: Required<WaSqliteDriverOptions>;
+    private readonly options: Required<WaSQLiteDriverOptions>;
     private opened = false;
     private openPromise: Promise<void> | null = null;
     // Mutex to prevent concurrent database operations (critical for wa-sqlite)
     private executionLock: Promise<void> = Promise.resolve();
     readonly name: string;
 
-    constructor(databaseName: string, options: WaSqliteDriverOptions = {}) {
+    constructor(databaseName: string, options: WaSQLiteDriverOptions = {}) {
         this.name = databaseName;
         this.options = {
             vfs: 'IDBBatchAtomicVFS',
@@ -215,11 +215,11 @@ export class WaSqliteDriver implements SQLiteDatabaseDriver {
         const module = await this.loadWasmModule();
 
         // Create SQLite API from module (cached - must only create once per module)
-        if (!cachedSqlite3) {
+        if (!cachedSQLite3) {
             const { Factory } = await import('@journeyapps/wa-sqlite');
-            cachedSqlite3 = Factory(module);
+            cachedSQLite3 = Factory(module);
         }
-        this.sqlite3 = cachedSqlite3;
+        this.sqlite3 = cachedSQLite3;
 
         // For IDB-based VFS, the VFS name is also used as the IndexedDB database name
         // Use a unique name based on database name to avoid conflicts
@@ -259,7 +259,7 @@ export class WaSqliteDriver implements SQLiteDatabaseDriver {
         return cachedModule;
     }
 
-    private async createVFS(module: any, vfsName: string): Promise<WaSqliteVFS> {
+    private async createVFS(module: any, vfsName: string): Promise<WaSQLiteVFS> {
         const vfsType = this.options.vfs;
         let VFSClass: VFSClass;
         let vfsOptions: any = undefined;
@@ -470,7 +470,7 @@ export class WaSqliteDriver implements SQLiteDatabaseDriver {
     /**
      * Get the VFS type being used by this driver.
      */
-    getVfsType(): WaSqliteVfsType {
+    getVfsType(): WaSQLiteVfsType {
         return this.options.vfs;
     }
 

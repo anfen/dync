@@ -7,14 +7,14 @@ import type {
     SQLiteDefaultValue,
     SQLiteForeignKeyReference,
 } from './schema';
-import type { StorageSchemaDefinitionOptions, SQLiteMigrationContext, SQLiteMigrationDirection, SQLiteMigrationHandler } from './types';
+import type { StorageSchemaDefinitionOptions, SQLiteMigrationContext, SQLiteMigrationHandler } from './types';
 import type { SQLiteDatabaseDriver, SQLiteRunResult, SQLiteQueryResult } from './types';
 import { LOCAL_PK } from '../../types';
 import type { SQLiteAdapterOptions, SQLiteTableSchemaMetadata, SQLiteColumnSchema } from './types';
 import { DYNC_STATE_TABLE } from '../../core/StateManager';
 import { SQLITE_SCHEMA_VERSION_STATE_KEY, quoteIdentifier } from './helpers';
 import { SQLiteTable } from './SQLiteTable';
-import { SqliteQueryContext } from './SqliteQueryContext';
+import { SQLiteQueryContext } from './SQLiteQueryContext';
 
 export class SQLiteAdapter implements StorageAdapter {
     readonly type = 'SQLiteAdapter';
@@ -199,12 +199,12 @@ export class SQLiteAdapter implements StorageAdapter {
         return driver.run(statement, params);
     }
 
-    async query<R>(callback: (ctx: SqliteQueryContext) => Promise<R>): Promise<R>;
+    async query<R>(callback: (ctx: SQLiteQueryContext) => Promise<R>): Promise<R>;
     async query(statement: string, values?: any[]): Promise<SQLiteQueryResult>;
-    async query<R>(arg1: string | ((ctx: SqliteQueryContext) => Promise<R>), arg2?: any[]): Promise<R | SQLiteQueryResult> {
+    async query<R>(arg1: string | ((ctx: SQLiteQueryContext) => Promise<R>), arg2?: any[]): Promise<R | SQLiteQueryResult> {
         if (typeof arg1 === 'function') {
             const driver = await this.getDriver();
-            return arg1(new SqliteQueryContext(driver, this));
+            return arg1(new SQLiteQueryContext(driver, this));
         }
         const statement = arg1;
         const values = arg2;
@@ -336,27 +336,24 @@ export class SQLiteAdapter implements StorageAdapter {
 
         if (currentVersion < targetVersion) {
             for (let version = currentVersion + 1; version <= targetVersion; version += 1) {
-                await this.runMigrationStep(version, 'upgrade', version - 1, version);
+                await this.runMigrationStep(version, 'up');
                 await this.setStoredSchemaVersion(version);
             }
             return;
         }
 
         for (let version = currentVersion; version > targetVersion; version -= 1) {
-            await this.runMigrationStep(version, 'downgrade', version, version - 1);
+            await this.runMigrationStep(version, 'down');
             await this.setStoredSchemaVersion(version - 1);
         }
     }
 
-    private async runMigrationStep(version: number, direction: SQLiteMigrationDirection, fromVersion: number, toVersion: number): Promise<void> {
+    private async runMigrationStep(version: number, direction: 'up' | 'down'): Promise<void> {
         const handler = this.getMigrationHandler(version, direction);
         if (!handler) {
             return;
         }
         const context: SQLiteMigrationContext = {
-            direction,
-            fromVersion,
-            toVersion,
             execute: (statement: string) => this.internalExecute(statement),
             run: (statement: string, values?: any[]) => this.internalRun(statement, values),
             query: (statement: string, values?: any[]) => this.internalQuery(statement, values),
@@ -364,13 +361,13 @@ export class SQLiteAdapter implements StorageAdapter {
         await handler(context);
     }
 
-    private getMigrationHandler(version: number, direction: SQLiteMigrationDirection): SQLiteMigrationHandler | undefined {
+    private getMigrationHandler(version: number, direction: 'up' | 'down'): SQLiteMigrationHandler | undefined {
         const options = this.versionOptions.get(version);
         const migrations = options?.sqlite?.migrations;
         if (!migrations) {
             return undefined;
         }
-        return direction === 'upgrade' ? migrations.upgrade : migrations.downgrade;
+        return direction === 'up' ? migrations.up : migrations.down;
     }
 
     private async applySchema(): Promise<void> {

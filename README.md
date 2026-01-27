@@ -2,9 +2,9 @@
 
 [![npm version](https://img.shields.io/npm/v/@anfenn/dync.svg)](https://www.npmjs.com/package/@anfenn/dync)
 
-A complete Typescript offline-first data layer with sync engine for any local storage (IndexedDB, Sqlite, etc.), and any backend (Restful, GraphQL, Supabase, etc.) in a Website, PWA, CapacitorJs, React Native, or Electron app.
+A complete Typescript offline-first data layer with optional sync engine for any local storage (IndexedDB, SQLite, etc.), and any backend (Restful, GraphQL, Supabase, etc.) in a Website, PWA, CapacitorJs, React Native, or Electron app.
 
-Start with a Website or PWA using IndexedDB, sync with your existing REST API, and later ship native apps with encrypted SQLite - without changing a line of code.
+Start with a Website or PWA using IndexedDB, sync with your existing REST API, and later ship native apps with encrypted SQLite - with no code changes - for free!
 
 ## Why Dync?
 
@@ -28,9 +28,9 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
 ## Goals
 
 - Persist SQL or NoSQL data locally and sync some or all tables to a backend
-- Storage agnostic. Comes with `Memory`, `IndexedDB` and `Sqlite` adapters (for CapacitorJs & React Native), and extendable with your own custom adapters
+- Storage agnostic. Comes with `Memory`, `IndexedDB` and `SQLite` adapters (for CapacitorJs & React Native), and extendable with your own custom adapters
 - Lazy loaded data keeps it in native storage, allowing low memory and fast app response, even with >100K records
-- Fast React Native Sqlite access via JSI
+- Fast React Native SQLite access via JSI
 - Single collection based api for both SQLite & IndexedDB, plus query() escape hatch for native storage api e.g.:
     - `db.myTable.add()` | `.update()` | `.where('myField').equals(42).first()`
     - `db.query()` is only intended to retrieve records, any mutations will be ignored by the sync engine:
@@ -38,7 +38,7 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
         db.query(async (ctx) => {
             if (ctx instanceof DexieQueryContext) {
                 return await ctx.table('items').where('value').startsWithIgnoreCase('dexie').toArray();
-            } else if (ctx instanceof SqliteQueryContext) {
+            } else if (ctx instanceof SQLiteQueryContext) {
                 return await ctx.queryRows('SELECT * FROM items WHERE value LIKE ?', ['sqlite%']);
             }
         });
@@ -115,7 +115,29 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
     );
     ```
 
-- Sqlite schema migration
+- SQLite schema migration:
+
+    ```ts
+    db.version(1).stores({ items: { columns: { name: { type: 'TEXT' } } } });
+    db.version(2)
+        .stores({
+            items: {
+                columns: {
+                    name: { type: 'TEXT' },
+                    priority: { type: 'INTEGER' },
+                },
+            },
+        })
+        .sqlite((builder) => {
+            builder.up(async (ctx) => {
+                await ctx.execute('ALTER TABLE "items" ADD COLUMN "priority" INTEGER DEFAULT 0');
+            });
+            builder.down(async (ctx) => {
+                await ctx.run('UPDATE "items" SET "priority" = NULL');
+            });
+        });
+    ```
+
 - "It just works" philosophy
 - Modern and always free (MIT)
 
@@ -203,7 +225,7 @@ Note: `deleted` doesn't exist on the client, as it's removed during sync.
 
 ### WA-SQLite VFS Options
 
-Choose a VFS based on your app's requirements. See [`WaSqliteDriverOptions`](src/storage/sqlite/drivers/WaSqliteDriver.ts) for configuration.
+Choose a VFS based on your app's requirements. See [`WaSQLiteDriverOptions`](src/storage/sqlite/drivers/WaSQLiteDriver.ts) for configuration.
 
 | VFS                     | Context | Multi-Tab | Durability | Performance | Best For                              |
 | ----------------------- | ------- | --------- | ---------- | ----------- | ------------------------------------- |
@@ -219,9 +241,9 @@ Choose a VFS based on your app's requirements. See [`WaSqliteDriverOptions`](src
 - **OPFS VFS types** require a Web Worker context and are not supported on Safari/iOS
 
 ```ts
-import { WaSqliteDriver, SQLiteAdapter } from '@anfenn/dync/wa-sqlite';
+import { WaSQLiteDriver, SQLiteAdapter } from '@anfenn/dync/wa-sqlite';
 
-const driver = new WaSqliteDriver('mydb', {
+const driver = new WaSQLiteDriver('mydb', {
     vfs: 'IDBBatchAtomicVFS', // or 'IDBMirrorVFS', 'OPFSCoopSyncVFS', 'AccessHandlePoolVFS'
 });
 const adapter = new SQLiteAdapter(driver);

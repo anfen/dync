@@ -4,7 +4,7 @@ import type { SQLiteDatabaseDriver, SQLiteRunResult, SQLiteQueryResult } from '.
 // Lazily loaded module cache to avoid top-level imports that break web bundlers
 let sqliteModuleCache: typeof import('@capacitor-community/sqlite') | null = null;
 
-async function getSqliteModule(): Promise<typeof import('@capacitor-community/sqlite')> {
+async function getSQLiteModule(): Promise<typeof import('@capacitor-community/sqlite')> {
     if (!sqliteModuleCache) {
         sqliteModuleCache = await import('@capacitor-community/sqlite');
     }
@@ -35,7 +35,7 @@ export class CapacitorSQLiteDriver implements SQLiteDatabaseDriver {
 
     private async getConnectionFactory(): Promise<SQLiteConnection> {
         if (!this.connectionFactory) {
-            const { CapacitorSQLite, SQLiteConnection } = await getSqliteModule();
+            const { CapacitorSQLite, SQLiteConnection } = await getSQLiteModule();
             this.connectionFactory = new SQLiteConnection(CapacitorSQLite);
         }
         return this.connectionFactory;

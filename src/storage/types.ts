@@ -2,7 +2,7 @@ import type { DexieQueryContext } from './dexie/DexieQueryContext';
 import type { MemoryQueryContext } from './memory/MemoryQueryContext';
 import type { TableSchemaDefinition } from './sqlite/schema';
 import type { StorageSchemaDefinitionOptions } from './sqlite/types';
-import type { SqliteQueryContext } from './sqlite/SqliteQueryContext';
+import type { SQLiteQueryContext } from './sqlite/SQLiteQueryContext';
 
 export type TransactionMode = 'r' | 'rw';
 
@@ -15,7 +15,7 @@ export interface StorageAdapter {
     defineSchema(version: number, schema: Record<string, TableSchemaDefinition>, options?: StorageSchemaDefinitionOptions): void;
     table<T = any>(name: string): StorageTable<T>;
     transaction<T>(mode: TransactionMode, tableNames: string[], callback: (context: StorageTransactionContext) => Promise<T>): Promise<T>;
-    query<R>(callback: (ctx: DexieQueryContext | SqliteQueryContext | MemoryQueryContext) => Promise<R>): Promise<R>;
+    query<R>(callback: (ctx: DexieQueryContext | SQLiteQueryContext | MemoryQueryContext) => Promise<R>): Promise<R>;
 }
 
 export interface StorageTransactionContext {

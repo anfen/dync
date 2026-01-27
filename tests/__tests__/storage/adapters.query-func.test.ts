@@ -2,7 +2,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { DexieAdapter, DexieQueryContext } from '../../../src/storage/dexie';
-import { SQLiteAdapter, SqliteQueryContext } from '../../../src/storage/sqlite';
+import { SQLiteAdapter, SQLiteQueryContext } from '../../../src/storage/sqlite';
 import { createSqlJsDriver } from '../../helpers/sqlJsDriver';
 import { MemoryAdapter, MemoryQueryContext } from '../../../src/storage/memory';
 import { createTestDync } from '../../helpers/dyncHarness';
@@ -78,7 +78,7 @@ describe('StorageAdapter.query', () => {
         await db.table('items').add({ value: 'sqlite-test' });
 
         const result = await db.query(async (ctx) => {
-            if (ctx instanceof SqliteQueryContext) {
+            if (ctx instanceof SQLiteQueryContext) {
                 // Execute raw SQL
                 const rows = await ctx.queryRows('SELECT * FROM items WHERE value = ?', ['sqlite-test']);
                 return rows[0];
@@ -122,7 +122,7 @@ describe('StorageAdapter.query', () => {
             if (ctx instanceof DexieQueryContext) {
                 return 'dexie';
             }
-            if (ctx instanceof SqliteQueryContext) {
+            if (ctx instanceof SQLiteQueryContext) {
                 return 'sqlite';
             }
             if (ctx instanceof MemoryQueryContext) {

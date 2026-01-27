@@ -28,7 +28,7 @@ import { startFirstLoad as runFirstLoad, startFirstLoadBatch as runFirstLoadBatc
 import type { FirstLoadProgressCallback, VisibilitySubscription } from './types';
 import { StateManager, DYNC_STATE_TABLE, type StateHelpers } from './core/StateManager';
 import type { MemoryQueryContext } from './storage/memory/MemoryQueryContext';
-import type { SqliteQueryContext } from './storage/sqlite/SqliteQueryContext';
+import type { SQLiteQueryContext } from './storage/sqlite/SQLiteQueryContext';
 import type { DexieQueryContext } from './storage/dexie/DexieQueryContext';
 
 const DEFAULT_SYNC_INTERVAL_MILLIS = 2000;
@@ -212,11 +212,11 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
                 const sqliteOptions = (schemaOptions.sqlite ??= {});
                 const migrations = (sqliteOptions.migrations ??= {});
                 const configurator: SQLiteVersionConfigurator = {
-                    upgrade(handler) {
-                        migrations.upgrade = handler;
+                    up(handler) {
+                        migrations.up = handler;
                     },
-                    downgrade(handler) {
-                        migrations.downgrade = handler;
+                    down(handler) {
+                        migrations.down = handler;
                     },
                 };
                 configure(configurator);
@@ -268,7 +268,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
         this.syncEnhancedTables.clear();
     }
 
-    async query<R>(callback: (ctx: DexieQueryContext | SqliteQueryContext | MemoryQueryContext) => Promise<R>): Promise<R> {
+    async query<R>(callback: (ctx: DexieQueryContext | SQLiteQueryContext | MemoryQueryContext) => Promise<R>): Promise<R> {
         return this.adapter.query(callback as any);
     }
 

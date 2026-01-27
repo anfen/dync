@@ -2,14 +2,14 @@
  * Browser Test Harness
  *
  * This script runs in the browser and executes stress tests against
- * different storage adapters, including WaSqlite.
+ * different storage adapters, including WaSQLite.
  */
 
 import { runStressTest, type StressTestResult, type StressTestOptions } from './stressTestRunner';
 import { DexieAdapter } from '../../src/storage/dexie';
 import { MemoryAdapter } from '../../src/storage/memory';
 import { SQLiteAdapter } from '../../src/storage/sqlite';
-import { WaSqliteDriver, type WaSqliteDriverOptions } from '../../src/storage/sqlite/drivers/WaSqliteDriver';
+import { WaSQLiteDriver, type WaSQLiteDriverOptions } from '../../src/storage/sqlite/drivers/WaSQLiteDriver';
 
 // =============================================================================
 // Adapter Factories
@@ -18,7 +18,7 @@ import { WaSqliteDriver, type WaSqliteDriverOptions } from '../../src/storage/sq
 type AdapterConfig = {
     key: string;
     label: string;
-    useSqliteSchema: boolean;
+    useSQLiteSchema: boolean;
     factory: (dbName: string) => any;
 };
 
@@ -26,32 +26,32 @@ const adapters: AdapterConfig[] = [
     {
         key: 'dexie',
         label: 'Dexie (IndexedDB)',
-        useSqliteSchema: false,
+        useSQLiteSchema: false,
         factory: (dbName) => new DexieAdapter(dbName),
     },
     {
         key: 'memory',
         label: 'MemoryAdapter',
-        useSqliteSchema: false,
+        useSQLiteSchema: false,
         factory: (dbName) => new MemoryAdapter(dbName),
     },
     {
         key: 'wa-sqlite-idb',
-        label: 'WaSqlite (IDBBatchAtomicVFS)',
-        useSqliteSchema: true,
+        label: 'WaSQLite (IDBBatchAtomicVFS)',
+        useSQLiteSchema: true,
         factory: async (dbName) => {
-            const options: WaSqliteDriverOptions = { vfs: 'IDBBatchAtomicVFS' };
-            const driver = new WaSqliteDriver(dbName, options);
+            const options: WaSQLiteDriverOptions = { vfs: 'IDBBatchAtomicVFS' };
+            const driver = new WaSQLiteDriver(dbName, options);
             return new SQLiteAdapter(driver);
         },
     },
     {
         key: 'wa-sqlite-idb-mirror',
-        label: 'WaSqlite (IDBMirrorVFS)',
-        useSqliteSchema: true,
+        label: 'WaSQLite (IDBMirrorVFS)',
+        useSQLiteSchema: true,
         factory: async (dbName) => {
-            const options: WaSqliteDriverOptions = { vfs: 'IDBMirrorVFS' };
-            const driver = new WaSqliteDriver(dbName, options);
+            const options: WaSQLiteDriverOptions = { vfs: 'IDBMirrorVFS' };
+            const driver = new WaSQLiteDriver(dbName, options);
             return new SQLiteAdapter(driver);
         },
     },
@@ -96,7 +96,7 @@ async function runAdapterTest(adapter: AdapterConfig, options: StressTestOptions
     updateStatus(adapter.key, 'Running...', 'running');
 
     try {
-        const result = await runStressTest(adapter.factory, options, adapter.useSqliteSchema);
+        const result = await runStressTest(adapter.factory, options, adapter.useSQLiteSchema);
 
         if (result.success) {
             const msg = `✓ ${adapter.label}: Passed (${result.clientCount} items, ${formatDuration(result.duration)})`;
@@ -264,7 +264,7 @@ if (document.readyState === 'loading') {
 (window as any).__adapters__ = adapters;
 
 // Export classes for persistence tests
-(window as any).__WaSqliteDriver__ = WaSqliteDriver;
+(window as any).__WaSQLiteDriver__ = WaSQLiteDriver;
 (window as any).__SQLiteAdapter__ = SQLiteAdapter;
 
 // Export Dync for full integration tests

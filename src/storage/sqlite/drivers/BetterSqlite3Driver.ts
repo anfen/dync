@@ -1,9 +1,9 @@
 import type { SQLiteDatabaseDriver, SQLiteQueryResult, SQLiteRunResult } from '../types';
 
 /**
- * Options for configuring the BetterSqlite3Driver.
+ * Options for configuring the BetterSQLite3Driver.
  */
-export interface BetterSqlite3DriverOptions {
+export interface BetterSQLite3DriverOptions {
     /**
      * Open the database in readonly mode.
      * @default false
@@ -42,21 +42,21 @@ export interface BetterSqlite3DriverOptions {
  *
  * @example
  * ```ts
- * import { BetterSqlite3Driver } from '@anfenn/dync/node';
+ * import { BetterSQLite3Driver } from '@anfenn/dync/node';
  * import { SQLiteAdapter } from '@anfenn/dync';
  *
- * const driver = new BetterSqlite3Driver('myapp.db', { wal: true });
+ * const driver = new BetterSQLite3Driver('myapp.db', { wal: true });
  * const adapter = new SQLiteAdapter('myapp', driver);
  * ```
  */
-export class BetterSqlite3Driver implements SQLiteDatabaseDriver {
-    readonly type = 'BetterSqlite3Driver';
+export class BetterSQLite3Driver implements SQLiteDatabaseDriver {
+    readonly type = 'BetterSQLite3Driver';
     private db: import('better-sqlite3').Database | null = null;
-    private readonly options: BetterSqlite3DriverOptions;
+    private readonly options: BetterSQLite3DriverOptions;
     private opened = false;
     readonly name: string;
 
-    constructor(databasePath: string, options: BetterSqlite3DriverOptions = {}) {
+    constructor(databasePath: string, options: BetterSQLite3DriverOptions = {}) {
         this.name = databasePath;
         this.options = {
             wal: true,

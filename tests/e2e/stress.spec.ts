@@ -4,7 +4,7 @@ import { test, expect, type Page } from '@playwright/test';
  * Browser Stress Tests using Playwright
  *
  * These tests run the same stress test logic as the Vitest tests,
- * but in a real browser environment with actual IndexedDB and WaSqlite.
+ * but in a real browser environment with actual IndexedDB and WaSQLite.
  */
 
 interface StressTestResult {
@@ -24,7 +24,7 @@ async function waitForTestResults(page: Page, timeoutMs = 300_000): Promise<Test
 }
 
 // Helper to clear IndexedDB databases with wa-sqlite prefix
-async function clearWaSqliteState(page: Page): Promise<void> {
+async function clearWaSQLiteState(page: Page): Promise<void> {
     await page.evaluate(async () => {
         // Get all IndexedDB databases and delete ones that match our test patterns
         const databases = await indexedDB.databases?.();
@@ -52,11 +52,11 @@ const config = testConfigs[process.env.STRESS_TEST_SIZE as keyof typeof testConf
 test.describe('Browser Stress Tests', () => {
     test.describe.configure({ mode: 'serial' });
 
-    // Clear state before the WaSqlite tests to ensure clean slate
+    // Clear state before the WaSQLite tests to ensure clean slate
     test.beforeEach(async ({ page }) => {
         // Navigate to clear any pending state
         await page.goto('/');
-        await clearWaSqliteState(page);
+        await clearWaSQLiteState(page);
     });
 
     test('Dexie (IndexedDB) stress test', async ({ page }) => {
@@ -85,7 +85,7 @@ test.describe('Browser Stress Tests', () => {
         console.log(`Memory: ${result?.clientCount} items synced in ${result?.duration}ms`);
     });
 
-    test('WaSqlite (IDBBatchAtomicVFS) stress test', async ({ page }) => {
+    test('WaSQLite (IDBBatchAtomicVFS) stress test', async ({ page }) => {
         await page.goto(`/?autorun=true&opCount=${config.opCount}&adapters=wa-sqlite-idb`);
 
         const results = await waitForTestResults(page);
@@ -95,10 +95,10 @@ test.describe('Browser Stress Tests', () => {
         expect(result?.success).toBe(true);
         expect(result?.clientCount).toBe(result?.serverCount);
 
-        console.log(`WaSqlite IDB: ${result?.clientCount} items synced in ${result?.duration}ms`);
+        console.log(`WaSQLite IDB: ${result?.clientCount} items synced in ${result?.duration}ms`);
     });
 
-    test('WaSqlite (IDBMirrorVFS) stress test', async ({ page }) => {
+    test('WaSQLite (IDBMirrorVFS) stress test', async ({ page }) => {
         await page.goto(`/?autorun=true&opCount=${config.opCount}&adapters=wa-sqlite-idb-mirror`);
 
         const results = await waitForTestResults(page);
@@ -108,13 +108,13 @@ test.describe('Browser Stress Tests', () => {
         expect(result?.success).toBe(true);
         expect(result?.clientCount).toBe(result?.serverCount);
 
-        console.log(`WaSqlite Mirror: ${result?.clientCount} items synced in ${result?.duration}ms`);
+        console.log(`WaSQLite Mirror: ${result?.clientCount} items synced in ${result?.duration}ms`);
     });
 });
 
 test.describe('Browser Persistence Tests', () => {
-    test('WaSqlite data persists across page reloads', async ({ page }) => {
-        // This test verifies that data written to WaSqlite via Dync actually persists in IndexedDB
+    test('WaSQLite data persists across page reloads', async ({ page }) => {
+        // This test verifies that data written to WaSQLite via Dync actually persists in IndexedDB
 
         await page.goto('/');
 
@@ -126,7 +126,7 @@ test.describe('Browser Persistence Tests', () => {
 
         const insertResult = await page.evaluate(async (dbName) => {
             const Dync = (window as any).__Dync__;
-            const WaSqliteDriver = (window as any).__WaSqliteDriver__;
+            const WaSQLiteDriver = (window as any).__WaSQLiteDriver__;
             const SQLiteAdapter = (window as any).__SQLiteAdapter__;
 
             // Mock API (no-op since we're just testing persistence)
@@ -138,7 +138,7 @@ test.describe('Browser Persistence Tests', () => {
                 firstLoad: async () => [],
             };
 
-            const driver = new WaSqliteDriver(dbName, { vfs: 'IDBBatchAtomicVFS' });
+            const driver = new WaSQLiteDriver(dbName, { vfs: 'IDBBatchAtomicVFS' });
             const adapter = new SQLiteAdapter(driver);
 
             const db = new Dync({
@@ -185,7 +185,7 @@ test.describe('Browser Persistence Tests', () => {
         // Re-open the database and verify data persists
         const persistedData = await page.evaluate(async (dbName) => {
             const Dync = (window as any).__Dync__;
-            const WaSqliteDriver = (window as any).__WaSqliteDriver__;
+            const WaSQLiteDriver = (window as any).__WaSQLiteDriver__;
             const SQLiteAdapter = (window as any).__SQLiteAdapter__;
 
             const mockApi = {
@@ -196,7 +196,7 @@ test.describe('Browser Persistence Tests', () => {
                 firstLoad: async () => [],
             };
 
-            const driver = new WaSqliteDriver(dbName, { vfs: 'IDBBatchAtomicVFS' });
+            const driver = new WaSQLiteDriver(dbName, { vfs: 'IDBBatchAtomicVFS' });
             const adapter = new SQLiteAdapter(driver);
 
             const db = new Dync({
