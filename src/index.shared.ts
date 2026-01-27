@@ -85,15 +85,17 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
     constructor(config: DyncOptions<_TStoreMap>) {
         const { databaseName, storageAdapter, sync: syncConfig, options } = config;
 
-        // Detect mode based on whether sync config has batch sync shape
-        const isBatchMode = typeof (syncConfig as BatchSync).push === 'function' && typeof (syncConfig as BatchSync).pull === 'function';
+        if (syncConfig) {
+            // Detect mode based on whether sync config has batch sync shape
+            const isBatchMode = typeof syncConfig.push === 'function' && typeof syncConfig.pull === 'function';
 
-        if (isBatchMode) {
-            this.batchSync = syncConfig as BatchSync;
-            this.syncedTables = new Set(this.batchSync.syncTables);
-        } else {
-            this.syncApis = syncConfig as Record<string, ApiFunctions>;
-            this.syncedTables = new Set(Object.keys(this.syncApis));
+            if (isBatchMode) {
+                this.batchSync = syncConfig as BatchSync;
+                this.syncedTables = new Set(this.batchSync.syncTables);
+            } else {
+                this.syncApis = syncConfig as Record<string, ApiFunctions>;
+                this.syncedTables = new Set(Object.keys(this.syncApis));
+            }
         }
 
         this.adapter = storageAdapter;
@@ -158,6 +160,9 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
                             // Auto-inject sync fields for sync tables
                             // Note: updated_at is indexed to support user queries like orderBy('updated_at')
                             fullSchema[tableName] = `${LOCAL_PK}, &${SERVER_PK}, ${tableSchema}, ${UPDATED_AT}`;
+                        } else {
+                            // Auto-inject _localId as primary key for non-sync tables
+                            fullSchema[tableName] = `${LOCAL_PK}, ${tableSchema}`;
                         }
 
                         self.logger.debug(
@@ -167,6 +172,9 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
                         if (isSyncTable) {
                             // Auto-inject sync columns for structured schemas
                             fullSchema[tableName] = self.injectSyncColumns(tableSchema);
+                        } else {
+                            // Auto-inject _localId column for non-sync structured schemas
+                            fullSchema[tableName] = self.injectLocalIdColumn(tableSchema);
                         }
 
                         const schemaColumns = Object.keys((fullSchema[tableName] as SQLiteTableDefinition).columns ?? {}).join(', ');
@@ -347,6 +355,26 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
             ...schema,
             columns: injectedColumns,
             indexes: injectedIndexes,
+        };
+    }
+
+    private injectLocalIdColumn(schema: SQLiteTableDefinition): SQLiteTableDefinition {
+        const columns = schema.columns ?? {};
+
+        // Validate user hasn't defined reserved _localId column
+        if (columns[LOCAL_PK]) {
+            throw new Error(`Column '${LOCAL_PK}' is auto-injected and cannot be defined manually.`);
+        }
+
+        // Inject _localId column as primary key
+        const injectedColumns: Record<string, any> = {
+            ...columns,
+            [LOCAL_PK]: { type: 'TEXT' },
+        };
+
+        return {
+            ...schema,
+            columns: injectedColumns,
         };
     }
 

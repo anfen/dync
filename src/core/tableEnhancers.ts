@@ -6,7 +6,7 @@ import type { WithTransaction } from './types';
 export type EmitMutation = (event: MutationEvent) => void;
 
 /**
- * Wraps a table with mutation emission for reactive updates.
+ * Wraps a table with mutation emission for reactive updates and auto-generates _localId.
  * This allows useLiveQuery to work with any table.
  */
 export function wrapWithMutationEmitter<T>(table: StorageTable<T>, tableName: string, emitMutation: EmitMutation): void {
@@ -21,13 +21,15 @@ export function wrapWithMutationEmitter<T>(table: StorageTable<T>, tableName: st
     const rawClear = table.raw.clear;
 
     table.add = async (item: AddItem<T>) => {
-        const result = await rawAdd(item as T);
+        const itemWithLocalId = { ...item, _localId: (item as any)._localId || createLocalId() } as T;
+        const result = await rawAdd(itemWithLocalId);
         emitMutation({ type: 'add', tableName, keys: [result] });
         return result;
     };
 
     table.put = async (item: T) => {
-        const result = await rawPut(item);
+        const itemWithLocalId = { ...item, _localId: (item as any)._localId || createLocalId() } as T;
+        const result = await rawPut(itemWithLocalId);
         emitMutation({ type: 'update', tableName, keys: [result] });
         return result;
     };
@@ -46,7 +48,11 @@ export function wrapWithMutationEmitter<T>(table: StorageTable<T>, tableName: st
     };
 
     table.bulkAdd = async (items: AddItem<T>[]) => {
-        const result = await rawBulkAdd(items as T[]);
+        const itemsWithLocalIds = items.map((item) => ({
+            ...item,
+            _localId: (item as any)._localId || createLocalId(),
+        })) as T[];
+        const result = await rawBulkAdd(itemsWithLocalIds);
         if (items.length > 0) {
             emitMutation({ type: 'add', tableName });
         }
@@ -54,7 +60,11 @@ export function wrapWithMutationEmitter<T>(table: StorageTable<T>, tableName: st
     };
 
     table.bulkPut = async (items: T[]) => {
-        const result = await rawBulkPut(items);
+        const itemsWithLocalIds = items.map((item) => ({
+            ...item,
+            _localId: (item as any)._localId || createLocalId(),
+        })) as T[];
+        const result = await rawBulkPut(itemsWithLocalIds);
         if (items.length > 0) {
             emitMutation({ type: 'update', tableName });
         }

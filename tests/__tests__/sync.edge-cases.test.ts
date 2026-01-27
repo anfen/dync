@@ -16,7 +16,6 @@ import {
 import { installDeterministicUUID, resetDeterministicUUID, wait, waitUntil, waitUntilAsync, setVisibility } from '../helpers/testUtils';
 import { getAdapterOverrides, storageAdapterMatrix } from '../helpers/storageAdapters';
 import { buildSQLiteSyncTableDefinition, sqliteCoverageUnsyncedDefinition } from '../helpers/sqliteStructuredSchemas';
-import { createLocalId } from '../../src/helpers';
 
 installDeterministicUUID();
 
@@ -51,7 +50,7 @@ const sqliteItemsSchema: Record<keyof Tables, SQLiteTableDefinition> = {
 
 const coverageSchema = {
     items: 'name',
-    unsynced: '++id',
+    unsynced: 'id, info', // _localId is auto-injected as primary key
 } as const;
 
 const sqliteCoverageSchema: Record<keyof TablesWithUnsynced, SQLiteTableDefinition> = {
@@ -331,8 +330,8 @@ describe.each(combinedMatrix)('Sync edge cases (%s)', (_label, scenario, syncMod
         });
 
         await db.sync.enable(true);
-        // For non-synced tables, we must provide _localId since SQLiteAdapter requires it
-        await (db.table('unsynced') as any).add({ _localId: createLocalId(), info: 'local-only' });
+        // Non-synced tables auto-generate _localId just like synced tables
+        await (db.table('unsynced') as any).add({ info: 'local-only' });
         await addRecordAndGetLocalId(db, 'items', { name: 'sync-me' });
         await runSyncCycle(db, { timeout: 4000, keepEnabled: true });
         await waitForSyncIdle(db, 4000);

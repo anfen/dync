@@ -1,6 +1,6 @@
 {
   "name": "@anfenn/dync",
-  "version": "1.0.28",
+  "version": "1.0.29",
   "private": false,
   "description": "Write once, run IndexedDB & SQLite with sync anywhere - React, React Native, Expo, Capacitor, Electron & Node.js",
   "keywords": [
@@ -132,8 +132,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "pnpm run format && pnpm run lint && pnpm exec tsc --noEmit && tsup",
-    "build:all": "pnpm run build && pnpm --filter react-capacitor build",
+    "build": "pnpm format && pnpm lint && pnpm exec tsc --noEmit && tsup",
+    "build:all": "pnpm build && pnpm --filter react-capacitor build",
     "dev": "tsup --watch",
     "lint": "eslint . --fix \"src/**/*.{js,jsx,ts,tsx,json}\"",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
@@ -142,7 +142,9 @@
     "test:all": "pnpm --filter tests test:all",
     "test:ci": "pnpm --filter tests test:ci",
     "test:browser:full": "pnpm --filter tests test:browser:full",
-    "reinstall": "find . -name node_modules -type d -prune -exec rm -rf {} + && pnpm install"
+    "reinstall": "find . -name node_modules -type d -prune -exec rm -rf {} + && pnpm install",
+    "push": "bash -c '[ -n \"$1\" ] && git add . && git commit -m \"$1\" && git push' --",
+    "release": "bash -c '[ -n \"$1\" ] || { echo \"Usage: pnpm release <commit-message>\"; exit 1; } && pnpm build:all && pnpm test:all && pnpm test:browser:full && git add . && git commit -m \"$1\" && npm version patch && git push && git push --tags && npm publish' --"
   },
   "devDependencies": {
     "@capacitor-community/sqlite": "7.0.2",

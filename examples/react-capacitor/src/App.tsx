@@ -51,6 +51,8 @@ export const db = new Dync<Store>({
     databaseName: DATABASE_NAME,
     storageAdapter: storageAdapter,
     sync: { todos: createCRUDSyncApi(backend.client) },
+    // OR for batch sync:
+    // sync: createBatchSyncApi(backend.client),
     options: {
         // Default: 2000 ms
         syncInterval: 2000,

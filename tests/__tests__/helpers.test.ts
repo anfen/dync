@@ -326,3 +326,190 @@ describe('parseApiError', () => {
         });
     });
 });
+
+// ============================================================================
+// Dync local-only mode tests (no sync config)
+// ============================================================================
+
+describe('Dync local-only mode (no sync config)', () => {
+    const createSilentLogger = () => ({
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+    });
+
+    it('works without sync config using MemoryAdapter', async () => {
+        const dbName = `local-only-memory-${Math.random().toString(36).slice(2)}`;
+        const db = new Dync({
+            databaseName: dbName,
+            storageAdapter: new MemoryAdapter(dbName),
+            // No sync config - local only!
+            options: { logger: createSilentLogger(), minLogLevel: 'none' },
+        });
+
+        db.version(1).stores({
+            notes: 'title', // User's field
+        });
+
+        await db.open();
+
+        // Add without providing _localId - should auto-generate
+        const localId = await db.table('notes').add({ title: 'My Note' });
+
+        // Verify _localId was auto-generated
+        expect(typeof localId).toBe('string');
+        expect(localId.length).toBeGreaterThan(0);
+
+        // Retrieve and verify the record has _localId
+        const note = await db.table('notes').get(localId);
+        expect(note).toBeDefined();
+        expect(note._localId).toBe(localId);
+        expect(note.title).toBe('My Note');
+
+        // Verify toArray also works
+        const allNotes = await db.table('notes').toArray();
+        expect(allNotes).toHaveLength(1);
+        expect(allNotes[0]._localId).toBe(localId);
+
+        await db.close();
+    });
+
+    it('works with bulkAdd without providing _localId', async () => {
+        const dbName = `local-only-bulkadd-${Math.random().toString(36).slice(2)}`;
+        const db = new Dync({
+            databaseName: dbName,
+            storageAdapter: new MemoryAdapter(dbName),
+            options: { logger: createSilentLogger(), minLogLevel: 'none' },
+        });
+
+        db.version(1).stores({
+            items: 'name',
+        });
+
+        await db.open();
+
+        // BulkAdd without _localId
+        const localIds = await db.table('items').bulkAdd([{ name: 'Item 1' }, { name: 'Item 2' }, { name: 'Item 3' }]);
+
+        expect(localIds).toHaveLength(3);
+        expect(localIds.every((id) => typeof id === 'string' && id.length > 0)).toBe(true);
+
+        // Verify all have unique _localId
+        const allItems = await db.table('items').toArray();
+        expect(allItems).toHaveLength(3);
+
+        const localIdSet = new Set(allItems.map((i) => i._localId));
+        expect(localIdSet.size).toBe(3); // All unique
+
+        await db.close();
+    });
+
+    it('works with put (upsert) without providing _localId', async () => {
+        const dbName = `local-only-put-${Math.random().toString(36).slice(2)}`;
+        const db = new Dync({
+            databaseName: dbName,
+            storageAdapter: new MemoryAdapter(dbName),
+            options: { logger: createSilentLogger(), minLogLevel: 'none' },
+        });
+
+        db.version(1).stores({
+            items: 'name',
+        });
+
+        await db.open();
+
+        // Put without _localId - should insert with auto-generated _localId
+        const localId = await db.table('items').put({ name: 'New Item' } as any);
+
+        expect(typeof localId).toBe('string');
+        const item = await db.table('items').get(localId);
+        expect(item._localId).toBe(localId);
+        expect(item.name).toBe('New Item');
+
+        await db.close();
+    });
+
+    it('respects user-provided _localId', async () => {
+        const dbName = `local-only-custom-id-${Math.random().toString(36).slice(2)}`;
+        const db = new Dync({
+            databaseName: dbName,
+            storageAdapter: new MemoryAdapter(dbName),
+            options: { logger: createSilentLogger(), minLogLevel: 'none' },
+        });
+
+        db.version(1).stores({
+            items: 'name',
+        });
+
+        await db.open();
+
+        // Add with custom _localId
+        const customId = 'my-custom-id-123';
+        const returnedId = await db.table('items').add({ _localId: customId, name: 'Custom Item' });
+
+        expect(returnedId).toBe(customId);
+
+        const item = await db.table('items').get(customId);
+        expect(item._localId).toBe(customId);
+        expect(item.name).toBe('Custom Item');
+
+        await db.close();
+    });
+
+    it('can update and delete records in local-only mode', async () => {
+        const dbName = `local-only-crud-${Math.random().toString(36).slice(2)}`;
+        const db = new Dync({
+            databaseName: dbName,
+            storageAdapter: new MemoryAdapter(dbName),
+            options: { logger: createSilentLogger(), minLogLevel: 'none' },
+        });
+
+        db.version(1).stores({
+            items: 'name',
+        });
+
+        await db.open();
+
+        // Add
+        const localId = await db.table('items').add({ name: 'Original' });
+
+        // Update
+        await db.table('items').update(localId, { name: 'Updated' });
+        let item = await db.table('items').get(localId);
+        expect(item.name).toBe('Updated');
+
+        // Delete
+        await db.table('items').delete(localId);
+        item = await db.table('items').get(localId);
+        expect(item).toBeUndefined();
+
+        await db.close();
+    });
+
+    it('sync.enable() is safe to call but does nothing in local-only mode', async () => {
+        const dbName = `local-only-sync-api-${Math.random().toString(36).slice(2)}`;
+        const db = new Dync({
+            databaseName: dbName,
+            storageAdapter: new MemoryAdapter(dbName),
+            options: { logger: createSilentLogger(), minLogLevel: 'none' },
+        });
+
+        db.version(1).stores({
+            items: 'name',
+        });
+
+        await db.open();
+
+        // These should not throw even without sync config
+        await db.sync.enable(true);
+        await db.sync.enable(false);
+
+        // State should still be accessible
+        const state = db.sync.state;
+        expect(state).toBeDefined();
+        expect(state.status).toBe('disabled');
+
+        await db.close();
+    });
+});

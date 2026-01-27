@@ -13,7 +13,6 @@ export const buildSQLiteSyncTableDefinition = (extraColumns: Record<string, SQLi
 
 export const sqliteCoverageUnsyncedDefinition: SQLiteTableDefinition = {
     columns: {
-        _localId: { type: 'TEXT' },
         id: { type: 'INTEGER' },
         info: { type: 'TEXT', nullable: true },
     },

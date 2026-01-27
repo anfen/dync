@@ -125,7 +125,7 @@ export interface SyncOptions {
 export interface DyncOptions<TStoreMap extends Record<string, any> = Record<string, any>> {
     databaseName: string;
     storageAdapter: StorageAdapter;
-    sync: Partial<Record<keyof TStoreMap, ApiFunctions>> | BatchSync;
+    sync?: Partial<Record<keyof TStoreMap, ApiFunctions>> | BatchSync;
     options?: SyncOptions;
 }
 
