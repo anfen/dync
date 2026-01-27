@@ -202,10 +202,7 @@ describe('SQLiteAdapter', () => {
                     },
                 },
             })
-            .sqlite((builder) => {
-                builder.up(upgradeSpy);
-                builder.down(downgradeSpy);
-            });
+            .sqlite({ up: upgradeSpy, down: downgradeSpy });
 
         // Trigger upgrade by calling adapter.open() (Dync caches its openPromise)
         await adapter.open();

@@ -128,13 +128,13 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
                 },
             },
         })
-        .sqlite((builder) => {
-            builder.up(async (ctx) => {
+        .sqlite({
+            up: async (ctx) => {
                 await ctx.execute('ALTER TABLE "items" ADD COLUMN "priority" INTEGER DEFAULT 0');
-            });
-            builder.down(async (ctx) => {
+            },
+            down: async (ctx) => {
                 await ctx.run('UPDATE "items" SET "priority" = NULL');
-            });
+            },
         });
     ```
 

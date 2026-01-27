@@ -141,11 +141,6 @@ export interface SQLiteVersionMigration {
     down?: SQLiteMigrationHandler;
 }
 
-export interface SQLiteVersionConfigurator {
-    up(handler: SQLiteMigrationHandler): void;
-    down(handler: SQLiteMigrationHandler): void;
-}
-
 export interface SQLiteSchemaDefinitionOptions {
     migrations?: SQLiteVersionMigration;
 }

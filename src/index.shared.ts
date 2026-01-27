@@ -19,7 +19,7 @@ import {
 } from './types';
 import { addVisibilityChangeListener } from './addVisibilityChangeListener';
 import { type StorageAdapter, type StorageTable, type TransactionMode } from './storage/types';
-import type { StorageSchemaDefinitionOptions, SQLiteVersionConfigurator } from './storage/sqlite/types';
+import type { StorageSchemaDefinitionOptions, SQLiteVersionMigration } from './storage/sqlite/types';
 import type { TableSchemaDefinition, SQLiteTableDefinition } from './storage/sqlite/schema';
 import { enhanceSyncTable, setupEnhancedTables as setupEnhancedTablesHelper, wrapWithMutationEmitter } from './core/tableEnhancers';
 import { pullAll as runPullAll, pullAllBatch as runPullAllBatch } from './core/pullOperations';
@@ -205,21 +205,12 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
 
                 return builder;
             },
-            sqlite(configure: (builder: SQLiteVersionConfigurator) => void) {
+            sqlite(migrations: SQLiteVersionMigration) {
                 if (!storesDefined) {
                     throw new Error('Call stores() before registering sqlite migrations');
                 }
                 const sqliteOptions = (schemaOptions.sqlite ??= {});
-                const migrations = (sqliteOptions.migrations ??= {});
-                const configurator: SQLiteVersionConfigurator = {
-                    up(handler) {
-                        migrations.up = handler;
-                    },
-                    down(handler) {
-                        migrations.down = handler;
-                    },
-                };
-                configure(configurator);
+                sqliteOptions.migrations = migrations;
                 return builder;
             },
         };
