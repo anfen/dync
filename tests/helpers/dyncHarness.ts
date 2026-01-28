@@ -17,7 +17,7 @@ async function createTestDyncInternal<TTables extends Record<string, any>>(
 ): Promise<Dync<TTables>> {
     const dbName = options.dbName ?? `dync-spec-${Math.random().toString(36).slice(2)}`;
     const syncOptions: SyncOptions = {
-        syncInterval: 25,
+        syncIntervalMs: 25,
         minLogLevel: 'none',
         logger: console,
         missingRemoteRecordDuringUpdateStrategy: 'ignore',

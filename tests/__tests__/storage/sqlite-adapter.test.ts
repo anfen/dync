@@ -77,7 +77,7 @@ describe('SQLiteAdapter', () => {
         const { server, apis } = createApis();
         const db = await createTestDync<SQLiteSchema>(apis, structuredSchema, {
             storageAdapterFactory,
-            syncOptions: { syncInterval: 10 },
+            syncOptions: { syncIntervalMs: 10 },
         });
 
         await db.table('items').add({ value: 'alpha' });
@@ -105,7 +105,7 @@ describe('SQLiteAdapter', () => {
 
         const db = await createTestDync<SQLiteSchema>(apis, structuredSchema, {
             storageAdapterFactory,
-            syncOptions: { syncInterval: 10 },
+            syncOptions: { syncIntervalMs: 10 },
         });
 
         await runSyncCycle(db, { keepEnabled: true });
@@ -121,7 +121,7 @@ describe('SQLiteAdapter', () => {
         const { apis } = createApis();
         const db = await createTestDync<SQLiteSchema>(apis, structuredSchema, {
             storageAdapterFactory,
-            syncOptions: { syncInterval: 10 },
+            syncOptions: { syncIntervalMs: 10 },
         });
 
         await db.table('items').add({ value: 'structured' });
@@ -256,7 +256,7 @@ describe('SQLiteAdapter', () => {
 
         const db = await createTestDync<SQLiteSchema>(apis, schemaWithoutIndex, {
             storageAdapterFactory,
-            syncOptions: { syncInterval: 10 },
+            syncOptions: { syncIntervalMs: 10 },
         });
 
         // Add items with various timestamps for orderBy testing
@@ -300,7 +300,7 @@ describe('SQLiteAdapter', () => {
 
         const db = await createTestDync<SQLiteSchema>(apis, schemaWithUserIndexes, {
             storageAdapterFactory,
-            syncOptions: { syncInterval: 10 },
+            syncOptions: { syncIntervalMs: 10 },
         });
 
         // Add items for testing both indexes

@@ -69,7 +69,7 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         const db = await createDb<Tables>(apis, schema, {
             dbName: `fail-list-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
-            syncOptions: { syncInterval: 50 },
+            syncOptions: { syncIntervalMs: 50 },
             ...adapterOverrides,
         });
 
@@ -103,7 +103,7 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         const db = await createDb<Tables>(apis, schema, {
             dbName: `fail-network-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
-            syncOptions: { syncInterval: 50 },
+            syncOptions: { syncIntervalMs: 50 },
             ...adapterOverrides,
         });
 
@@ -143,7 +143,7 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         const db = await createDb<Tables>(apis, schema, {
             dbName: `fail-update-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
-            syncOptions: { syncInterval: 40 },
+            syncOptions: { syncIntervalMs: 40 },
             ...adapterOverrides,
         });
 
@@ -190,7 +190,7 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         const db = await createDb<Tables>(apis, schema, {
             dbName: `fail-remove-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
-            syncOptions: { syncInterval: 40 },
+            syncOptions: { syncIntervalMs: 40 },
             ...adapterOverrides,
         });
 
@@ -228,7 +228,7 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         const db = await createDb<Tables>(badApis, schema, {
             dbName: `fail-add-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
-            syncOptions: { syncInterval: 40 },
+            syncOptions: { syncIntervalMs: 40 },
             ...adapterOverrides,
         });
 
@@ -267,7 +267,7 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
             delete copy.things[key];
             const db = await createDb<Tables>(copy, schema, {
                 dbName: `fail-missing-${key}-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
-                syncOptions: { syncInterval: 40 },
+                syncOptions: { syncIntervalMs: 40 },
                 ...adapterOverrides,
             });
 
@@ -311,7 +311,7 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         const db = await createDb<Tables>(apis, schema, {
             dbName: `fail-overlap-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
-            syncOptions: { syncInterval: 500 },
+            syncOptions: { syncIntervalMs: 500 },
             ...adapterOverrides,
         });
 
@@ -351,7 +351,7 @@ describe.each(combinedMatrix)('Sync failures and error handling (%s)', (_label, 
 
         const db = await createDb<Tables>(apis, schema, {
             dbName: `fail-slow-add-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
-            syncOptions: { syncInterval: 50 },
+            syncOptions: { syncIntervalMs: 50 },
             ...adapterOverrides,
         });
 

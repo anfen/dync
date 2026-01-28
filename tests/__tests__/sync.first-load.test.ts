@@ -85,7 +85,7 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
         const db = await createDbFn<Tables>(apis, schema, {
             dbName: `first-load-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
             syncOptions: {
-                syncInterval: 50,
+                syncIntervalMs: 50,
             },
             ...adapterOverrides,
         });
@@ -222,7 +222,7 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
         }
     });
 
-    it('tracks lastPulled timestamp after first load', async () => {
+    it('tracks newestServerUpdatedAt timestamp after first load', async () => {
         const { apis, server } = makeApis();
         const db = await createDb(apis);
 
@@ -233,13 +233,13 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
             await waitUntilAsync(async () => db.sync.state.firstLoadDone === true, 30000);
 
             const state = db.sync.state;
-            expect(state.lastPulled).toBeDefined();
-            expect(state.lastPulled.fish).toBeDefined();
+            expect(state.newestServerUpdatedAt).toBeDefined();
+            expect(state.newestServerUpdatedAt.fish).toBeDefined();
 
-            // lastPulled should be at or after the newest server record
-            const lastPulledDate = new Date(state.lastPulled.fish!);
+            // newestServerUpdatedAt should be at or after the newest server record
+            const newestServerUpdatedAtDate = new Date(state.newestServerUpdatedAt.fish!);
             const newestDate = new Date(newestServerTimestamp);
-            expect(lastPulledDate.getTime()).toBeGreaterThanOrEqual(newestDate.getTime());
+            expect(newestServerUpdatedAtDate.getTime()).toBeGreaterThanOrEqual(newestDate.getTime());
         } finally {
             await db.sync.enable(false);
             await db.close();
@@ -265,8 +265,8 @@ describe.each(combinedMatrix)('Dync first load (%s)', (_label, scenario, syncMod
             // Parse and verify the persisted state
             const persistedState = JSON.parse(stateRow!.value);
             expect(persistedState.firstLoadDone).toBe(true);
-            expect(persistedState.lastPulled).toBeDefined();
-            expect(persistedState.lastPulled.fish).toBeDefined();
+            expect(persistedState.newestServerUpdatedAt).toBeDefined();
+            expect(persistedState.newestServerUpdatedAt.fish).toBeDefined();
         } finally {
             await db.sync.enable(false);
             await db.close();

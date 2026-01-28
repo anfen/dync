@@ -57,7 +57,7 @@ describe('MemoryAdapter', () => {
         const db = await createTestDync<MemorySchema>(apis, schema, {
             storageAdapterFactory: (dbName) => new MemoryAdapter(dbName),
             syncOptions: {
-                syncInterval: 10,
+                syncIntervalMs: 10,
             },
         });
 
@@ -88,7 +88,7 @@ describe('MemoryAdapter', () => {
         const db = await createTestDync<MemorySchema>(apis, schema, {
             storageAdapterFactory: (dbName) => new MemoryAdapter(dbName),
             syncOptions: {
-                syncInterval: 10,
+                syncIntervalMs: 10,
             },
         });
 

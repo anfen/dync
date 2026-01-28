@@ -125,7 +125,7 @@ async function processBatchInChunks(
     isEmptyTable: boolean,
     isFirstBatch: boolean,
 ): Promise<BatchResult> {
-    let newest = new Date(ctx.state.getState().lastPulled[tableName] || 0);
+    let newest = new Date(ctx.state.getState().newestServerUpdatedAt[tableName] || 0);
 
     return ctx.withTransaction('rw', [tableName, DYNC_STATE_TABLE], async (tables) => {
         const txTable = tables[tableName]!;
@@ -174,8 +174,8 @@ async function processBatchInChunks(
 
         await ctx.state.setState((syncState) => ({
             ...syncState,
-            lastPulled: {
-                ...syncState.lastPulled,
+            newestServerUpdatedAt: {
+                ...syncState.newestServerUpdatedAt,
                 [tableName]: newest.toISOString(),
             },
         }));

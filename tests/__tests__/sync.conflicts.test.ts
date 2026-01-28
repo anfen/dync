@@ -87,7 +87,7 @@ async function createDb(
         storageAdapterFactory,
         syncOptions: {
             conflictResolutionStrategy: conflictStrategy,
-            syncInterval: 50,
+            syncIntervalMs: 50,
         },
     });
     await db.sync.enable(true);

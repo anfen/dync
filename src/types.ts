@@ -29,8 +29,8 @@ export interface CrudSyncApi {
     update: (id: any, changes: any, item: any) => Promise<boolean>;
     remove: (id: any) => Promise<void>;
     list: (lastUpdatedAt: Date) => Promise<any[]>;
-    // Optional: Override `SyncOptions.syncInterval` for this table's pull sync
-    listInterval?: number;
+    // Optional: Extend `SyncOptions.syncIntervalMs` for this table's pull sync
+    listExtraIntervalMs?: number;
     firstLoad?: (lastId: any) => Promise<any[]>;
 }
 
@@ -115,7 +115,7 @@ export type AfterRemoteAddCallback = (tableName: string, item: SyncedRecord) => 
 export type MissingRemoteRecordDuringUpdateCallback = (strategy: MissingRemoteRecordStrategy, item: SyncedRecord) => void;
 
 export interface SyncOptions {
-    syncInterval?: number;
+    syncIntervalMs?: number;
     logger?: Logger;
     minLogLevel?: LogLevel;
     onAfterRemoteAdd?: AfterRemoteAddCallback;
@@ -159,7 +159,8 @@ export interface MutationEvent {
 export interface PersistedSyncState {
     firstLoadDone: boolean;
     pendingChanges: PendingChange[];
-    lastPulled: Record<string, string>;
+    newestServerUpdatedAt: Record<string, string>;
+    lastPulledAt?: Record<string, number>;
     conflicts?: Record<string, Conflict>;
 }
 

@@ -78,7 +78,7 @@ async function createBenchmarkDync(scenario: AdapterScenario) {
         storageAdapter: adapter,
         sync: dummyApis,
         options: {
-            syncInterval: 0, // Disable sync
+            syncIntervalMs: 0, // Disable sync
             minLogLevel: 'none',
         },
     });

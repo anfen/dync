@@ -177,12 +177,12 @@ describe.each(combinedMatrix)('Sync edge cases (%s)', (_label, scenario, syncMod
     const schema = (scenario.key === 'sqlite' ? sqliteItemsSchema : itemsSchema) as Record<keyof Tables, TableSchemaDefinition>;
     const unsyncedSchema = (scenario.key === 'sqlite' ? sqliteCoverageSchema : coverageSchema) as Record<keyof TablesWithUnsynced, TableSchemaDefinition>;
 
-    const buildScenarioDb = async (apis: any, syncInterval = 40, suffix = '') => {
+    const buildScenarioDb = async (apis: any, syncIntervalMs = 40, suffix = '') => {
         const prefix = suffix ? `${basePrefix}-${suffix}` : basePrefix;
         const db = await syncMode.createDync<Tables>(apis, schema, {
             dbName: `${prefix}-${Math.random().toString(36).slice(2)}`,
             syncOptions: {
-                syncInterval,
+                syncIntervalMs,
                 minLogLevel: 'none',
             },
             ...adapterOverrides,
@@ -227,7 +227,7 @@ describe.each(combinedMatrix)('Sync edge cases (%s)', (_label, scenario, syncMod
         const { apis, server } = buildApis();
         const db = await syncMode.createDync<Tables>(apis, schema, {
             dbName: `${basePrefix}-delete-during-add-${Math.random().toString(36).slice(2)}`,
-            syncOptions: { syncInterval: 200 },
+            syncOptions: { syncIntervalMs: 200 },
             ...adapterOverrides,
         });
         await db.sync.enable(true);
@@ -390,7 +390,7 @@ describe.each(combinedMatrix)('Sync edge cases (%s)', (_label, scenario, syncMod
 
         const db = await syncMode.createDync<Tables>(apis, schema, {
             dbName: `${basePrefix}-sync-guard-${Math.random().toString(36).slice(2)}`,
-            syncOptions: { syncInterval: 500 },
+            syncOptions: { syncIntervalMs: 500 },
             ...adapterOverrides,
         });
 
@@ -401,6 +401,54 @@ describe.each(combinedMatrix)('Sync edge cases (%s)', (_label, scenario, syncMod
         await Promise.all([sync1, sync2]);
 
         expect(listSpy).toHaveBeenCalledTimes(1);
+
+        await db.close();
+    });
+
+    // ========================================================================
+    // listExtraIntervalMs rate limits per-table pulls
+    // ========================================================================
+
+    // listExtraIntervalMs only applies to per-table (CRUD) sync, not batch sync
+    it.skipIf(syncMode.key === 'batch')('listExtraIntervalMs skips pull if interval has not elapsed', async () => {
+        const listSpy = vi.fn(async (_lastUpdatedAt: Date) => [{ id: 1, updated_at: new Date().toISOString() }]);
+
+        const apis = {
+            items: {
+                add: vi.fn(async (_item: any) => ({ id: 2, updated_at: new Date().toISOString() })),
+                update: vi.fn(async () => true),
+                remove: vi.fn(async () => {}),
+                list: listSpy,
+                listExtraIntervalMs: 50,
+                firstLoad: vi.fn(async () => []),
+            },
+        };
+
+        const db = await syncMode.createDync<Tables>(apis, schema, {
+            dbName: `${basePrefix}-list-interval-${Math.random().toString(36).slice(2)}`,
+            syncOptions: { syncIntervalMs: 25 },
+            ...adapterOverrides,
+        });
+
+        // Not skipped, needs to set newestServerUpdatedAt
+        await runSyncCycle(db, { timeout: 2000 });
+        expect(listSpy).toHaveBeenCalledTimes(1);
+
+        // Skipped due to listExtraIntervalMs not elapsed
+        await runSyncCycle(db, { timeout: 2000 });
+        expect(listSpy).toHaveBeenCalledTimes(1);
+
+        // NOT skipped due to listExtraIntervalMs elapsed
+        await runSyncCycle(db, { timeout: 2000 });
+        expect(listSpy).toHaveBeenCalledTimes(2);
+
+        // Skipped again
+        await runSyncCycle(db, { timeout: 2000 });
+        expect(listSpy).toHaveBeenCalledTimes(2);
+
+        // NOT skipped due to listExtraIntervalMs elapsed
+        await runSyncCycle(db, { timeout: 2000 });
+        expect(listSpy).toHaveBeenCalledTimes(3);
 
         await db.close();
     });

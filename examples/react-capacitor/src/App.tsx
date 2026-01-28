@@ -55,7 +55,7 @@ export const db = new Dync<Store>({
     // sync: createBatchSyncApi(backend.client),
     options: {
         // Default: 2000 ms
-        syncInterval: 2000,
+        syncIntervalMs: 2000,
 
         // Default: console
         logger: console,

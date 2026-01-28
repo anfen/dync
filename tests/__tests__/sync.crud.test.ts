@@ -166,11 +166,11 @@ describe.each(combinedMatrix)('Sync CRUD - Client-assigned IDs (%s)', (_label, s
     const adapterOverrides = getAdapterOverrides(storageScenario);
     const schema = (storageScenario.key === 'sqlite' ? sqliteFishSchemaClientId : fishSchemaClientId) as Record<keyof TablesClientId, TableSchemaDefinition>;
 
-    const createDb = async (apis: any, syncInterval = 40) => {
+    const createDb = async (apis: any, syncIntervalMs = 40) => {
         const db = await syncMode.createDync<TablesClientId>(apis, schema, {
             dbName: `crud-client-${storageScenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
             syncOptions: {
-                syncInterval,
+                syncIntervalMs,
             },
             ...adapterOverrides,
         });
@@ -297,11 +297,11 @@ describe.each(combinedMatrix)('Sync CRUD - Server-assigned IDs (%s)', (_label, s
     const adapterOverrides = getAdapterOverrides(storageScenario);
     const schema = (storageScenario.key === 'sqlite' ? sqliteFishSchemaServerId : fishSchemaServerId) as Record<keyof TablesServerId, TableSchemaDefinition>;
 
-    const createDb = async (apis: any, syncInterval = 40) => {
+    const createDb = async (apis: any, syncIntervalMs = 40) => {
         const db = await syncMode.createDync<TablesServerId>(apis, schema, {
             dbName: `crud-server-${storageScenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
             syncOptions: {
-                syncInterval,
+                syncIntervalMs,
             },
             ...adapterOverrides,
         });

@@ -16,7 +16,7 @@ export interface PullContext {
 
 export interface PullAllContext extends PullContext {
     syncApis: Record<string, CrudSyncApi>;
-    syncInterval: number;
+    syncIntervalMs: number;
 }
 
 export interface PullAllBatchContext extends PullContext {
@@ -28,20 +28,57 @@ export async function pullAll(ctx: PullAllContext): Promise<{ error?: Error; cha
     const changedTables: string[] = [];
     for (const [tableName, api] of Object.entries(ctx.syncApis)) {
         try {
-            const lastPulled = ctx.state.getState().lastPulled[tableName];
-            const since = lastPulled ? new Date(lastPulled) : new Date(0);
+            const now = Date.now();
+
+            // Skip pull if within listExtraIntervalMs
+            if (beforeListExtraInterval(api, tableName, ctx, now)) {
+                continue;
+            }
+
+            const newestServerUpdatedAt = ctx.state.getState().newestServerUpdatedAt[tableName];
+            const since = newestServerUpdatedAt ? new Date(newestServerUpdatedAt) : new Date(0);
 
             ctx.logger.debug(`[dync] pull:start tableName=${tableName} since=${since.toISOString()}`);
 
             const serverData = (await api.list(since)) as SyncedRecord[];
             const changed = await processPullData(tableName, serverData, since, ctx);
             if (changed) changedTables.push(tableName);
+
+            // Track when api.list() was called for this table (for listExtraIntervalMs feature)
+            // but only if listExtraIntervalMs is set, to reduce storage calls
+            if (hasListExtraInterval(api)) {
+                await ctx.state.setState((syncState) => ({
+                    ...syncState,
+                    lastPulledAt: {
+                        ...syncState.lastPulledAt,
+                        [tableName]: now,
+                    },
+                }));
+            }
         } catch (err) {
             firstSyncError = firstSyncError ?? (err as Error);
             ctx.logger.error(`[dync] pull:error tableName=${tableName}`, err);
         }
     }
     return { error: firstSyncError, changedTables };
+}
+
+function hasListExtraInterval(api: CrudSyncApi): boolean {
+    return Number.isFinite(api.listExtraIntervalMs) && api.listExtraIntervalMs! > 0;
+}
+
+function beforeListExtraInterval(api: CrudSyncApi, tableName: string, ctx: PullAllContext, now: number): boolean {
+    if (!hasListExtraInterval(api)) {
+        return false;
+    }
+    const lastPulledAt = ctx.state.getState().lastPulledAt?.[tableName] ?? 0;
+    if (now - lastPulledAt < api.listExtraIntervalMs!) {
+        ctx.logger.debug(
+            `[dync] pull:skip-interval tableName=${tableName} lastPulledAt=${new Date(lastPulledAt).toISOString()} nextAllowed=${new Date(lastPulledAt + api.listExtraIntervalMs!).toISOString()}`,
+        );
+        return true;
+    }
+    return false;
 }
 
 async function handleRemoteItemUpdate(table: StorageTable<any>, tableName: string, localItem: any, remote: any, ctx: PullContext): Promise<void> {
@@ -118,8 +155,8 @@ export async function pullAllBatch(ctx: PullAllBatchContext): Promise<{ error?: 
         // Build since map for all synced tables
         const sinceMap: Record<string, Date> = {};
         for (const tableName of ctx.batchSync.syncTables) {
-            const lastPulled = ctx.state.getState().lastPulled[tableName];
-            sinceMap[tableName] = lastPulled ? new Date(lastPulled) : new Date(0);
+            const newestServerUpdatedAt = ctx.state.getState().newestServerUpdatedAt[tableName];
+            sinceMap[tableName] = newestServerUpdatedAt ? new Date(newestServerUpdatedAt) : new Date(0);
         }
 
         ctx.logger.debug(`[dync] pull:batch:start tables=${[...ctx.batchSync.syncTables].join(',')}`, sinceMap);
@@ -202,8 +239,8 @@ async function processPullData(tableName: string, serverData: SyncedRecord[], si
 
         await ctx.state.setState((syncState) => ({
             ...syncState,
-            lastPulled: {
-                ...syncState.lastPulled,
+            newestServerUpdatedAt: {
+                ...syncState.newestServerUpdatedAt,
                 [tableName]: newest.toISOString(),
             },
         }));

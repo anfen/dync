@@ -91,7 +91,7 @@ async function buildStressDb(
     apis: any,
     scenario: StorageAdapterScenario,
     schema: Record<keyof StressTables, TableSchemaDefinition> = itemsSchema,
-    syncInterval = 20,
+    syncIntervalMs = 20,
     syncMode = syncModeScenarios[0]!,
 ) {
     const adapterOverrides = getAdapterOverrides(scenario);
@@ -99,7 +99,7 @@ async function buildStressDb(
     const db = await createFn<StressTables>(apis, schema, {
         dbName: `stress-${scenario.key}-${syncMode.key}-${Math.random().toString(36).slice(2)}`,
         syncOptions: {
-            syncInterval,
+            syncIntervalMs,
             minLogLevel: 'none',
             logger: console,
         },

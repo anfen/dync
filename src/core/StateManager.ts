@@ -16,7 +16,7 @@ interface StateRow {
 const DEFAULT_STATE: PersistedSyncState = {
     firstLoadDone: false,
     pendingChanges: [],
-    lastPulled: {},
+    newestServerUpdatedAt: {},
 };
 
 interface StateContext {
@@ -247,7 +247,8 @@ function clonePersistedState(state: PersistedSyncState): PersistedSyncState {
             before: cloneRecord(change.before),
             after: cloneRecord(change.after),
         })),
-        lastPulled: { ...state.lastPulled },
+        newestServerUpdatedAt: { ...state.newestServerUpdatedAt },
+        lastPulledAt: state.lastPulledAt ? { ...state.lastPulledAt } : undefined,
         conflicts: cloneConflicts(state.conflicts),
     };
 }

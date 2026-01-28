@@ -150,7 +150,7 @@ async function runAllTests(): Promise<void> {
         opCount,
         errorRate: parseFloat(errorRateEl?.value || '0.06'),
         maxDelayMs: 40,
-        syncInterval: 15,
+        syncIntervalMs: 15,
         timeoutMs: urlTimeout ? parseInt(urlTimeout, 10) : dynamicTimeout,
     };
 

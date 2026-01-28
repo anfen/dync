@@ -101,7 +101,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
         this.adapter = storageAdapter;
         this.name = databaseName;
         this.syncOptions = {
-            syncInterval: DEFAULT_SYNC_INTERVAL_MILLIS,
+            syncIntervalMs: DEFAULT_SYNC_INTERVAL_MILLIS,
             logger: DEFAULT_LOGGER,
             minLogLevel: DEFAULT_MIN_LOG_LEVEL,
             missingRemoteRecordDuringUpdateStrategy: DEFAULT_MISSING_REMOTE_RECORD_STRATEGY,
@@ -430,7 +430,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
         return runPullAll({
             ...baseContext,
             syncApis: this.syncApis,
-            syncInterval: this.syncOptions.syncInterval!,
+            syncIntervalMs: this.syncOptions.syncIntervalMs!,
         });
     }
 
@@ -471,7 +471,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
         while (this.syncTimerStarted) {
             this.sleepAbortController = new AbortController();
             await this.syncOnce();
-            await sleep(this.syncOptions.syncInterval!, this.sleepAbortController.signal);
+            await sleep(this.syncOptions.syncIntervalMs!, this.sleepAbortController.signal);
         }
 
         this.syncStatus = 'disabled';

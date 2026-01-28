@@ -15,7 +15,7 @@ export function createCRUDSyncApi(api: AxiosInstance): CrudSyncApi {
     return {
         add: async (todo: Todo) => {
             const { data } = await api.post('/todos', todo);
-            // Musty return server assigned `updated_at`, and `id` if not client assigned
+            // Must return server assigned `updated_at`, and `id` (if not client assigned)
             return data as Todo;
         },
         update: async (id: number, changes: Partial<Todo>, _item: Todo) => {
@@ -41,6 +41,8 @@ export function createCRUDSyncApi(api: AxiosInstance): CrudSyncApi {
                 throw new Error(statusText);
             }
         },
+        // Optional: Delay calling this endpoint during a pull for e.g. 1 week, if slow changing data, to reduce server load
+        listExtraIntervalMs: 0, // e.g. 7 * 24 * 60 * 60 * 1000 for 1 week
         list: async (lastUpdatedAt: Date) => {
             // Called during sync pull
             // Include soft-deleted records (`deleted: true`) in the response

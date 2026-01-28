@@ -146,7 +146,7 @@ test.describe('Browser Persistence Tests', () => {
                 storageAdapter: adapter,
                 sync: { test_items: mockApi },
                 options: {
-                    syncInterval: 1000,
+                    syncIntervalMs: 1000,
                     minLogLevel: 'none',
                 },
             });
@@ -204,7 +204,7 @@ test.describe('Browser Persistence Tests', () => {
                 storageAdapter: adapter,
                 sync: { test_items: mockApi },
                 options: {
-                    syncInterval: 1000,
+                    syncIntervalMs: 1000,
                     minLogLevel: 'none',
                 },
             });

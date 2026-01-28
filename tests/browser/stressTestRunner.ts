@@ -38,7 +38,7 @@ export interface StressTestOptions {
     opCount?: number;
     errorRate?: number;
     maxDelayMs?: number;
-    syncInterval?: number;
+    syncIntervalMs?: number;
     timeoutMs?: number;
 }
 
@@ -150,7 +150,7 @@ export async function runStressTest(
     options: StressTestOptions = {},
     useSQLiteSchema = false,
 ): Promise<StressTestResult> {
-    const { opCount = 2000, errorRate = 0.06, maxDelayMs = 40, syncInterval = 15, timeoutMs = 180_000 } = options;
+    const { opCount = 2000, errorRate = 0.06, maxDelayMs = 40, syncIntervalMs = 15, timeoutMs = 180_000 } = options;
 
     const startTime = Date.now();
     resetUuidCounter();
@@ -164,7 +164,7 @@ export async function runStressTest(
         const adapter = await adapterFactory(dbName);
 
         const syncOptions: SyncOptions = {
-            syncInterval,
+            syncIntervalMs,
             minLogLevel: 'none',
             logger: console,
             missingRemoteRecordDuringUpdateStrategy: 'ignore',
