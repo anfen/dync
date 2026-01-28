@@ -10,7 +10,7 @@ export { createLocalId } from './helpers';
 
 export type {
     AfterRemoteAddCallback,
-    ApiFunctions,
+    CrudSyncApi,
     BatchSync,
     BatchPushPayload,
     BatchPushResult,

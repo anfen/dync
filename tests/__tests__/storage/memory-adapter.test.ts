@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryAdapter } from '../../../src/storage/memory';
-import type { ApiFunctions, SyncedRecord } from '../../../src/types';
+import type { CrudSyncApi, SyncedRecord } from '../../../src/types';
 import { createTestDync, runSyncCycle } from '../../helpers/dyncHarness';
 
 type MemorySchema = {
@@ -11,12 +11,12 @@ const schema = {
     items: 'value',
 } as const;
 
-function createMemoryApis(server: SyncedRecord[] = []): { server: SyncedRecord[]; apis: Record<string, ApiFunctions> } {
+function createMemoryApis(server: SyncedRecord[] = []): { server: SyncedRecord[]; apis: Record<string, CrudSyncApi> } {
     let idCounter = 1;
 
     const now = () => new Date().toISOString();
 
-    const apis: Record<string, ApiFunctions> = {
+    const apis: Record<string, CrudSyncApi> = {
         items: {
             add: async (item) => {
                 const id = item.id ?? idCounter++;

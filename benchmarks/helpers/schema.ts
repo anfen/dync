@@ -1,5 +1,5 @@
 import type { SyncedRecord } from '../../src/types';
-import type { ApiFunctions } from '../../src/index';
+import type { CrudSyncApi } from '../../src/index';
 
 // ============================================================================
 // Test Schema & Data
@@ -42,7 +42,7 @@ export const dexieSchema = {
 };
 
 // Dummy APIs - we're not testing sync, just queries
-export const dummyApis: Record<string, ApiFunctions> = {
+export const dummyApis: Record<string, CrudSyncApi> = {
     contacts: {
         add: async () => ({ id: 1, updated_at: new Date().toISOString() }),
         update: async () => true,

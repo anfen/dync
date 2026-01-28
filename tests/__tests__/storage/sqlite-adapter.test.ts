@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Dync } from '../../../src/index';
 import { SQLiteAdapter } from '../../../src/storage/sqlite';
 import { createSqlJsDriver } from '../../helpers/sqlJsDriver';
-import type { ApiFunctions, SyncedRecord } from '../../../src/types';
+import type { CrudSyncApi, SyncedRecord } from '../../../src/types';
 import { createTestDync, runSyncCycle } from '../../helpers/dyncHarness';
 import type { SQLiteTableDefinition } from '../../../src/storage/sqlite/schema';
 
@@ -31,11 +31,11 @@ const locateSqlJsFile = (() => {
     }
 })();
 
-function createApis(server: SyncedRecord[] = []): { server: SyncedRecord[]; apis: Record<string, ApiFunctions> } {
+function createApis(server: SyncedRecord[] = []): { server: SyncedRecord[]; apis: Record<string, CrudSyncApi> } {
     let idCounter = 1;
     const now = () => new Date().toISOString();
 
-    const apis: Record<string, ApiFunctions> = {
+    const apis: Record<string, CrudSyncApi> = {
         items: {
             add: async (item) => {
                 const id = item.id ?? idCounter++;

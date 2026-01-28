@@ -1,5 +1,5 @@
 import type { AxiosInstance } from 'axios';
-import type { ApiFunctions, BatchSync, BatchPushPayload, BatchPushResult, BatchFirstLoadResult } from '@anfenn/dync';
+import type { CrudSyncApi, BatchSync, BatchPushPayload, BatchPushResult, BatchFirstLoadResult } from '@anfenn/dync';
 
 export type Todo = {
     _localId: string;
@@ -11,7 +11,7 @@ export type Todo = {
 
 export type ServerTodo = Omit<Todo, '_localId'>;
 
-export function createCRUDSyncApi(api: AxiosInstance): ApiFunctions {
+export function createCRUDSyncApi(api: AxiosInstance): CrudSyncApi {
     return {
         add: async (todo: Todo) => {
             const { data } = await api.post('/todos', todo);

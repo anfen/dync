@@ -7,7 +7,7 @@
 
 import type { StorageAdapter } from '../../src/storage/types';
 import type { TableSchemaDefinition } from '../../src/storage/sqlite/schema';
-import { Dync, type ApiFunctions, type SyncOptions } from '../../src/index';
+import { Dync, type CrudSyncApi, type SyncOptions } from '../../src/index';
 import { LOCAL_PK } from '../../src/types';
 
 // =============================================================================
@@ -174,7 +174,7 @@ export async function runStressTest(
         const db = new Dync<StressTables>({
             databaseName: dbName,
             storageAdapter: adapter,
-            sync: apis as Record<string, ApiFunctions>,
+            sync: apis as Record<string, CrudSyncApi>,
             options: syncOptions,
         });
         db.version(1).stores(schema as Record<string, TableSchemaDefinition>);

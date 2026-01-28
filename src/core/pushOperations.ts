@@ -1,6 +1,6 @@
 import { createLocalId, orderFor } from '../helpers';
 import type { Logger } from '../logger';
-import type { ApiFunctions, BatchPushPayload, BatchPushResult, BatchSync, PendingChange, SyncOptions } from '../types';
+import type { CrudSyncApi, BatchPushPayload, BatchPushResult, BatchSync, PendingChange, SyncOptions } from '../types';
 import { SyncAction } from '../types';
 import type { StorageTable } from '../storage/types';
 import { DYNC_STATE_TABLE, type StateHelpers } from './StateManager';
@@ -15,7 +15,7 @@ export interface PushContext {
 }
 
 export interface PushAllContext extends PushContext {
-    syncApis: Record<string, ApiFunctions>;
+    syncApis: Record<string, CrudSyncApi>;
 }
 
 export interface PushAllBatchContext extends PushContext {

@@ -1,4 +1,4 @@
-import { Dync, type ApiFunctions, type BatchSync, type SyncOptions } from '../../src/index';
+import { Dync, type CrudSyncApi, type BatchSync, type SyncOptions } from '../../src/index';
 import type { StorageAdapter } from '../../src/storage/types';
 import { waitUntil } from './testUtils';
 import type { TableSchemaDefinition } from '../../src/storage/sqlite/schema';
@@ -11,7 +11,7 @@ export interface CreateDyncOptions {
 }
 
 async function createTestDyncInternal<TTables extends Record<string, any>>(
-    sync: Record<string, ApiFunctions> | BatchSync,
+    sync: Record<string, CrudSyncApi> | BatchSync,
     schema: Record<keyof TTables, TableSchemaDefinition>,
     options: CreateDyncOptions,
 ): Promise<Dync<TTables>> {
@@ -37,7 +37,7 @@ async function createTestDyncInternal<TTables extends Record<string, any>>(
 }
 
 export async function createTestDync<TTables extends Record<string, any>>(
-    apis: Record<string, ApiFunctions>,
+    apis: Record<string, CrudSyncApi>,
     schema: Record<keyof TTables, TableSchemaDefinition>,
     options: CreateDyncOptions,
 ): Promise<Dync<TTables>> {
@@ -47,7 +47,7 @@ export async function createTestDync<TTables extends Record<string, any>>(
 /**
  * Convert per-table APIs to a BatchSync object for batch mode testing.
  */
-export function apisToBatchSync(apis: Record<string, ApiFunctions>): BatchSync {
+export function apisToBatchSync(apis: Record<string, CrudSyncApi>): BatchSync {
     const syncTables = Object.keys(apis);
 
     return {
@@ -126,7 +126,7 @@ export function apisToBatchSync(apis: Record<string, ApiFunctions>): BatchSync {
 }
 
 export async function createTestDyncBatch<TTables extends Record<string, any>>(
-    apis: Record<string, ApiFunctions>,
+    apis: Record<string, CrudSyncApi>,
     schema: Record<keyof TTables, TableSchemaDefinition>,
     options: CreateDyncOptions,
 ): Promise<Dync<TTables>> {

@@ -45,7 +45,7 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
         ```
 
 - Sync some or all tables with any backend in 2 ways:
-    - Option 1: Map remote api CRUD urls to a local collection:
+    - Option 1: Map remote api CRUD urls to a local table:
 
         ```ts
         const db = new Dync({

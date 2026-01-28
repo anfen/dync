@@ -1,7 +1,7 @@
 import { newLogger, type Logger, type LogLevel } from './logger';
 import { sleep } from './helpers';
 import {
-    type ApiFunctions,
+    type CrudSyncApi,
     type BatchSync,
     type DyncOptions,
     type SyncOptions,
@@ -50,7 +50,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
     private sleepAbortController?: AbortController;
     private closing = false;
     // Per-table sync mode
-    private syncApis: Record<string, ApiFunctions> = {};
+    private syncApis: Record<string, CrudSyncApi> = {};
     // Batch sync mode
     private batchSync?: BatchSync;
     private syncedTables: Set<string> = new Set();
@@ -93,7 +93,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
                 this.batchSync = syncConfig as BatchSync;
                 this.syncedTables = new Set(this.batchSync.syncTables);
             } else {
-                this.syncApis = syncConfig as Record<string, ApiFunctions>;
+                this.syncApis = syncConfig as Record<string, CrudSyncApi>;
                 this.syncedTables = new Set(Object.keys(this.syncApis));
             }
         }
@@ -430,6 +430,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
         return runPullAll({
             ...baseContext,
             syncApis: this.syncApis,
+            syncInterval: this.syncOptions.syncInterval!,
         });
     }
 

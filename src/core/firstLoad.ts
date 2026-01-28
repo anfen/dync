@@ -1,6 +1,6 @@
 import { createLocalId, sleep } from '../helpers';
 import type { Logger } from '../logger';
-import type { ApiFunctions, BatchFirstLoadResult, BatchSync, FirstLoadProgressCallback } from '../types';
+import type { CrudSyncApi, BatchFirstLoadResult, BatchSync, FirstLoadProgressCallback } from '../types';
 import type { StorageTable } from '../storage/types';
 import { DYNC_STATE_TABLE, type StateHelpers } from './StateManager';
 import type { WithTransaction } from './types';
@@ -14,7 +14,7 @@ export interface FirstLoadBaseContext {
 }
 
 export interface FirstLoadContext extends FirstLoadBaseContext {
-    syncApis: Record<string, ApiFunctions>;
+    syncApis: Record<string, CrudSyncApi>;
 }
 
 export interface FirstLoadBatchContext extends FirstLoadBaseContext {

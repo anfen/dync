@@ -1,6 +1,6 @@
 import { createLocalId } from '../helpers';
 import type { Logger } from '../logger';
-import type { ApiFunctions, BatchSync, ConflictResolutionStrategy, FieldConflict, SyncedRecord } from '../types';
+import type { CrudSyncApi, BatchSync, ConflictResolutionStrategy, FieldConflict, SyncedRecord } from '../types';
 import { SyncAction } from '../types';
 import type { StorageTable } from '../storage/types';
 import { DYNC_STATE_TABLE, type StateHelpers } from './StateManager';
@@ -15,7 +15,8 @@ export interface PullContext {
 }
 
 export interface PullAllContext extends PullContext {
-    syncApis: Record<string, ApiFunctions>;
+    syncApis: Record<string, CrudSyncApi>;
+    syncInterval: number;
 }
 
 export interface PullAllBatchContext extends PullContext {

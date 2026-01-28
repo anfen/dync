@@ -24,11 +24,13 @@ export interface SyncedRecord {
     [k: string]: any;
 }
 
-export interface ApiFunctions {
+export interface CrudSyncApi {
     add: (item: any) => Promise<any | undefined>;
     update: (id: any, changes: any, item: any) => Promise<boolean>;
     remove: (id: any) => Promise<void>;
     list: (lastUpdatedAt: Date) => Promise<any[]>;
+    // Optional: Override `SyncOptions.syncInterval` for this table's pull sync
+    listInterval?: number;
     firstLoad?: (lastId: any) => Promise<any[]>;
 }
 
@@ -125,7 +127,7 @@ export interface SyncOptions {
 export interface DyncOptions<TStoreMap extends Record<string, any> = Record<string, any>> {
     databaseName: string;
     storageAdapter: StorageAdapter;
-    sync?: Partial<Record<keyof TStoreMap, ApiFunctions>> | BatchSync;
+    sync?: Partial<Record<keyof TStoreMap, CrudSyncApi>> | BatchSync;
     options?: SyncOptions;
 }
 
