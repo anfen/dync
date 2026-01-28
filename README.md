@@ -58,6 +58,8 @@ And see how Dync compares to the alternatives [below](#hasnt-this-already-been-d
                     update: (id, changes) => fetch(`/api/items/${id}`),
                     remove: (id) => fetch(`/api/items/${id}`),
                     list: (since) => fetch(`/api/items?since=${since}`),
+                    // Optional: Delay calling this endpoint during a pull if slow changing data, to reduce server load
+                    listExtraIntervalMs: 7 * 24 * 60 * 60 * 1000, // 1 week
                 },
             },
         });
