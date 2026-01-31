@@ -20,7 +20,7 @@ Start with a Website or PWA using IndexedDB, sync with your existing REST API, a
     - Browsers can't store the encryption key securely
     - A user's password could be used as the encryption key instead, but if the app allows biometric login, then there will be no password during those logins to decrypt the database
 
-    ... you can simply add CapacitorJs or move to React Native which have sqlite & secure enclave storage, and only change the adapter Dync uses
+    ... so you can simply add CapacitorJs or move to React Native which have sqlite & secure enclave storage, and only change the adapter Dync uses
 
 3. Completely free and open source
 
