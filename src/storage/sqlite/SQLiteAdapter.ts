@@ -203,8 +203,7 @@ export class SQLiteAdapter implements StorageAdapter {
     async query(statement: string, values?: any[]): Promise<SQLiteQueryResult>;
     async query<R>(arg1: string | ((ctx: SQLiteQueryContext) => Promise<R>), arg2?: any[]): Promise<R | SQLiteQueryResult> {
         if (typeof arg1 === 'function') {
-            const driver = await this.getDriver();
-            return arg1(new SQLiteQueryContext(driver, this));
+            return arg1(new SQLiteQueryContext(this));
         }
         const statement = arg1;
         const values = arg2;

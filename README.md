@@ -11,11 +11,14 @@ Start with a Website or PWA using IndexedDB, sync with your existing REST API, a
 1. Target IndexedDB as a PWA, and SQLite in the AppStores, with no code changes and native storage performance
 2. Frictionless upgrade path from an offline-first PWA targeting IndexedDB, to when:
 
-    **A) Substring search is required on many records** (IndexedDB doesn't support this so will do a full table scan in the JS VM, which is both slow and will spike memory)
+    **_A) Substring search is required on many records:_**
+    - IndexedDB doesn't support this so will do a full table scan in the JS VM, which is both slow and will spike memory
 
-    **_and/or_**
+    **_AND/OR_**
 
-    **B) Encryption is required** (Browsers can't store the encryption key securely)
+    **_B) Encryption is required:_**
+    - Browsers can't store the encryption key securely
+    - A user's password could be used as the encryption key instead, but if the app allows biometric login, then there will be no password during those logins to decrypt the database
 
     ... you can simply add CapacitorJs or move to React Native which have sqlite & secure enclave storage, and only change the adapter Dync uses
 
