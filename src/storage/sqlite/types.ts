@@ -1,7 +1,7 @@
 import type { SQLiteColumnDefinition, SQLiteTableDefinition } from './schema';
 
 export interface SQLiteAdapterOptions {
-    debug?: boolean | ((statement: string, parameters?: any[]) => void);
+    debug?: boolean;
 }
 
 export interface SQLiteColumnSchema extends SQLiteColumnDefinition {

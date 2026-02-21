@@ -60,8 +60,8 @@ function createApis(server: SyncedRecord[] = []): { server: SyncedRecord[]; apis
                     existing.updated_at = now();
                 }
             },
-            list: async (lastUpdatedAt: Date) => {
-                return server.filter((record) => new Date(record.updated_at ?? 0) > lastUpdatedAt).map((record) => ({ ...record }));
+            list: async (newestUpdatedAt: Date) => {
+                return server.filter((record) => new Date(record.updated_at ?? 0) > newestUpdatedAt).map((record) => ({ ...record }));
             },
             firstLoad: async () => server.map((record) => ({ ...record })),
         },

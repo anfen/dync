@@ -69,10 +69,10 @@ function makeFaultyApis(opts: { errorRate?: number; maxDelayMs?: number } = {}) 
                 const rec = server.find((r) => r.id === id);
                 if (rec) rec.deleted = true;
             }),
-            list: vi.fn(async (lastUpdatedAt: Date) => {
+            list: vi.fn(async (newestUpdatedAt: Date) => {
                 await maybeDelay();
                 maybeThrow('list');
-                return server.filter((r) => new Date(r.updated_at!) > lastUpdatedAt).map((r) => ({ ...r }));
+                return server.filter((r) => new Date(r.updated_at!) > newestUpdatedAt).map((r) => ({ ...r }));
             }),
             firstLoad: vi.fn(async (_lastId: any) => {
                 await maybeDelay();

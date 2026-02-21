@@ -4,7 +4,7 @@ import {
     type CrudSyncApi,
     type BatchSync,
     type DyncOptions,
-    type SyncOptions,
+    type ResolvedSyncOptions,
     type SyncState,
     type SyncedRecord,
     type MissingRemoteRecordStrategy,
@@ -54,7 +54,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
     // Batch sync mode
     private batchSync?: BatchSync;
     private syncedTables: Set<string> = new Set();
-    private syncOptions: SyncOptions;
+    private syncOptions: ResolvedSyncOptions;
     private logger: Logger;
     private syncTimerStarted = false;
     private mutationsDuringSync = false;
@@ -109,7 +109,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
             ...(options ?? {}),
         };
 
-        this.logger = newLogger(this.syncOptions.logger!, this.syncOptions.minLogLevel!);
+        this.logger = newLogger(this.syncOptions.logger, this.syncOptions.minLogLevel);
         this.state = new StateManager({
             storageAdapter: this.adapter,
         });
@@ -417,7 +417,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
             state: this.state,
             table: this.table.bind(this),
             withTransaction: this.withTransaction.bind(this),
-            conflictResolutionStrategy: this.syncOptions.conflictResolutionStrategy!,
+            conflictResolutionStrategy: this.syncOptions.conflictResolutionStrategy,
         };
 
         if (this.batchSync) {
@@ -430,7 +430,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
         return runPullAll({
             ...baseContext,
             syncApis: this.syncApis,
-            syncIntervalMs: this.syncOptions.syncIntervalMs!,
+            syncIntervalMs: this.syncOptions.syncIntervalMs,
         });
     }
 
@@ -471,7 +471,7 @@ class DyncBase<_TStoreMap extends Record<string, any> = Record<string, any>> {
         while (this.syncTimerStarted) {
             this.sleepAbortController = new AbortController();
             await this.syncOnce();
-            await sleep(this.syncOptions.syncIntervalMs!, this.sleepAbortController.signal);
+            await sleep(this.syncOptions.syncIntervalMs, this.sleepAbortController.signal);
         }
 
         this.syncStatus = 'disabled';

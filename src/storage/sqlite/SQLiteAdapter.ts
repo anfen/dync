@@ -290,12 +290,8 @@ export class SQLiteAdapter implements StorageAdapter {
         if (!debug) {
             return;
         }
-        const hasParams = parameters && parameters.length;
-        if (typeof debug === 'function') {
-            debug(statement, hasParams ? parameters : undefined);
-            return;
-        }
         if (debug === true) {
+            const hasParams = parameters && parameters.length;
             if (hasParams) {
                 console.debug('[dync][sqlite]', statement, parameters);
             } else {

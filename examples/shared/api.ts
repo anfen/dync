@@ -43,12 +43,12 @@ export function createCRUDSyncApi(api: AxiosInstance): CrudSyncApi {
         },
         // Optional: Delay calling this endpoint during a pull for e.g. 1 week, if slow changing data, to reduce server load
         listExtraIntervalMs: 0, // e.g. 7 * 24 * 60 * 60 * 1000 for 1 week
-        list: async (lastUpdatedAt: Date) => {
+        list: async (newestUpdatedAt: Date) => {
             // Called during sync pull
             // Include soft-deleted records (`deleted: true`) in the response
-            // lastUpdatedAt is the most recent server `updated_at` timestamp, never the clients
+            // newestUpdatedAt is the most recent server `updated_at` timestamp, never the clients
             // The timestamp comparison should be `>` not `>=`
-            const { data } = await api.get('/todos', { params: { since: lastUpdatedAt.toISOString() } });
+            const { data } = await api.get('/todos', { params: { since: newestUpdatedAt.toISOString() } });
             return data as Todo[];
         },
         firstLoad: async (lastId: unknown): Promise<Todo[]> => {

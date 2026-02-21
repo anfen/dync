@@ -17,8 +17,8 @@ export class DexieAdapter implements StorageAdapter {
     }
 
     async open(): Promise<void> {
-        // Dexie auto-opens on first operation, so this is typically a no-op.
-        // However, after delete() we explicitly re-open to ensure continued usability.
+        // Dexie will auto-open on first operation
+        await requestPersistentStorage();
     }
 
     async close(): Promise<void> {
@@ -68,5 +68,16 @@ export class DexieAdapter implements StorageAdapter {
             }
             return callback({ tables });
         });
+    }
+}
+
+async function requestPersistentStorage(): Promise<void> {
+    if (navigator.storage && navigator.storage.persist) {
+        const granted = await navigator.storage.persist();
+        if (granted) {
+            console.log('[dync] IndexedDB storage persistence granted');
+        } else {
+            console.warn('[dync] IndexedDB storage may be cleared under storage pressure');
+        }
     }
 }

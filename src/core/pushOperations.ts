@@ -1,6 +1,6 @@
 import { createLocalId, orderFor } from '../helpers';
 import type { Logger } from '../logger';
-import type { CrudSyncApi, BatchPushPayload, BatchPushResult, BatchSync, PendingChange, SyncOptions } from '../types';
+import type { CrudSyncApi, BatchPushPayload, BatchPushResult, BatchSync, PendingChange, ResolvedSyncOptions } from '../types';
 import { SyncAction } from '../types';
 import type { StorageTable } from '../storage/types';
 import { DYNC_STATE_TABLE, type StateHelpers } from './StateManager';
@@ -11,7 +11,7 @@ export interface PushContext {
     state: StateHelpers;
     table: <T>(name: string) => StorageTable<T>;
     withTransaction: WithTransaction;
-    syncOptions: SyncOptions;
+    syncOptions: ResolvedSyncOptions;
 }
 
 export interface PushAllContext extends PushContext {
@@ -125,7 +125,7 @@ async function pushOne(change: PendingChange, ctx: PushAllContext): Promise<void
 
 async function handleMissingRemoteRecord(change: PendingChange, ctx: PushContext): Promise<void> {
     const { tableName, localId } = change;
-    const strategy = ctx.syncOptions.missingRemoteRecordDuringUpdateStrategy!;
+    const strategy = ctx.syncOptions.missingRemoteRecordDuringUpdateStrategy;
 
     let localItem: any;
 

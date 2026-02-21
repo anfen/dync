@@ -108,10 +108,10 @@ function makeFaultyApis(opts: { errorRate?: number; maxDelayMs?: number } = {}) 
                 const rec = server.find((r) => r.id === id);
                 if (rec) rec.deleted = true;
             },
-            list: async (lastUpdatedAt: Date) => {
+            list: async (newestUpdatedAt: Date) => {
                 await maybeDelay();
                 maybeThrow('list');
-                return server.filter((r) => new Date(r.updated_at!) > lastUpdatedAt).map((r) => ({ ...r }));
+                return server.filter((r) => new Date(r.updated_at!) > newestUpdatedAt).map((r) => ({ ...r }));
             },
             firstLoad: async (_lastId: any) => {
                 await maybeDelay();

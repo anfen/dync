@@ -28,8 +28,8 @@ export interface CrudSyncApi {
     add: (item: any) => Promise<any | undefined>;
     update: (id: any, changes: any, item: any) => Promise<boolean>;
     remove: (id: any) => Promise<void>;
-    list: (lastUpdatedAt: Date) => Promise<any[]>;
-    // Optional: Extend `SyncOptions.syncIntervalMs` for this table's pull sync
+    list: (newestUpdatedAt: Date) => Promise<any[]>;
+    // Optional: Add `listExtraIntervalMs` to `SyncOptions.syncIntervalMs` for when this table is pulled during sync
     listExtraIntervalMs?: number;
     firstLoad?: (lastId: any) => Promise<any[]>;
 }
@@ -123,6 +123,9 @@ export interface SyncOptions {
     onAfterMissingRemoteRecordDuringUpdate?: MissingRemoteRecordDuringUpdateCallback;
     conflictResolutionStrategy?: ConflictResolutionStrategy;
 }
+
+export type ResolvedSyncOptions = SyncOptions &
+    Required<Pick<SyncOptions, 'syncIntervalMs' | 'logger' | 'minLogLevel' | 'missingRemoteRecordDuringUpdateStrategy' | 'conflictResolutionStrategy'>>;
 
 export interface DyncOptions<TStoreMap extends Record<string, any> = Record<string, any>> {
     databaseName: string;

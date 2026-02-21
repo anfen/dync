@@ -99,9 +99,9 @@ function buildApis(latency = 5) {
                     const rec = server.find((r) => r.id === id);
                     if (rec) rec.deleted = true;
                 }),
-                list: vi.fn(async (lastUpdatedAt: Date) => {
+                list: vi.fn(async (newestUpdatedAt: Date) => {
                     await wait(latency);
-                    return server.filter((r) => new Date(r.updated_at) > lastUpdatedAt).map((r) => ({ ...r }));
+                    return server.filter((r) => new Date(r.updated_at) > newestUpdatedAt).map((r) => ({ ...r }));
                 }),
                 firstLoad: vi.fn(async (_lastId: any) => {
                     await wait(latency);
@@ -112,7 +112,7 @@ function buildApis(latency = 5) {
     } as const;
 }
 
-function makeApisWithListHandler(listHandler?: (lastUpdatedAt: Date) => Promise<any[]> | any[]) {
+function makeApisWithListHandler(listHandler?: (newestUpdatedAt: Date) => Promise<any[]> | any[]) {
     let idCounter = 0;
     const server: any[] = [];
 
@@ -135,9 +135,9 @@ function makeApisWithListHandler(listHandler?: (lastUpdatedAt: Date) => Promise<
                     const rec = server.find((r) => r.id === id);
                     if (rec) rec.deleted = true;
                 }),
-                list: vi.fn(async (lastUpdatedAt: Date) => {
-                    if (listHandler) return listHandler(lastUpdatedAt);
-                    return server.filter((r) => new Date(r.updated_at) > lastUpdatedAt).map((r) => ({ ...r }));
+                list: vi.fn(async (newestUpdatedAt: Date) => {
+                    if (listHandler) return listHandler(newestUpdatedAt);
+                    return server.filter((r) => new Date(r.updated_at) > newestUpdatedAt).map((r) => ({ ...r }));
                 }),
                 firstLoad: vi.fn(async (_lastId: any) => server.map((r) => ({ ...r }))),
             },
@@ -381,7 +381,7 @@ describe.each(combinedMatrix)('Sync edge cases (%s)', (_label, scenario, syncMod
 
     it('rapid overlapping syncOnce calls hit syncing guard', async () => {
         const listLatency = 150;
-        const listSpy = vi.fn(async (_lastUpdatedAt: Date) => {
+        const listSpy = vi.fn(async (_newestUpdatedAt: Date) => {
             await wait(listLatency);
             return [];
         });
@@ -411,7 +411,7 @@ describe.each(combinedMatrix)('Sync edge cases (%s)', (_label, scenario, syncMod
 
     // listExtraIntervalMs only applies to per-table (CRUD) sync, not batch sync
     it.skipIf(syncMode.key === 'batch')('listExtraIntervalMs skips pull if interval has not elapsed', async () => {
-        const listSpy = vi.fn(async (_lastUpdatedAt: Date) => [{ id: 1, updated_at: new Date().toISOString() }]);
+        const listSpy = vi.fn(async (_newestUpdatedAt: Date) => [{ id: 1, updated_at: new Date().toISOString() }]);
 
         const apis = {
             items: {

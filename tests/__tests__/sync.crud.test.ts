@@ -66,8 +66,8 @@ function makeClientIdApis() {
                     const rec = server.find((r) => r.id === id);
                     if (rec) rec.deleted = true;
                 }),
-                list: vi.fn(async (lastUpdatedAt: Date) => {
-                    return server.filter((r) => new Date(r.updated_at) > lastUpdatedAt).map((r) => ({ ...r }));
+                list: vi.fn(async (newestUpdatedAt: Date) => {
+                    return server.filter((r) => new Date(r.updated_at) > newestUpdatedAt).map((r) => ({ ...r }));
                 }),
                 firstLoad: vi.fn(async (_lastId: any) => []),
             },
@@ -133,8 +133,8 @@ function makeServerIdApis() {
                     const rec = server.find((r) => r.id === id);
                     if (rec) rec.deleted = true;
                 }),
-                list: vi.fn(async (lastUpdatedAt: Date) => {
-                    return server.filter((r) => new Date(r.updated_at) > lastUpdatedAt).map((r) => ({ ...r }));
+                list: vi.fn(async (newestUpdatedAt: Date) => {
+                    return server.filter((r) => new Date(r.updated_at) > newestUpdatedAt).map((r) => ({ ...r }));
                 }),
                 firstLoad: vi.fn(async (_lastId: any) => []),
             },
