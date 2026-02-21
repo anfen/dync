@@ -1,6 +1,6 @@
 {
   "name": "@anfenn/dync",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": false,
   "description": "Write once, run IndexedDB & SQLite with sync anywhere - React, React Native, Expo, Capacitor, Electron & Node.js",
   "keywords": [
