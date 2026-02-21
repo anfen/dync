@@ -3,6 +3,8 @@ import { SyncAction, type MutationEvent, type SyncedRecord } from '../types';
 import type { AddItem, StorageTable } from '../storage/types';
 import { DYNC_STATE_TABLE, type StateHelpers } from './StateManager';
 import type { WithTransaction } from './types';
+import { SyncAwareCollection } from './SyncAwareCollection';
+import { SyncAwareWhereClause } from './SyncAwareWhereClause';
 export type EmitMutation = (event: MutationEvent) => void;
 
 /**
@@ -462,6 +464,22 @@ export function enhanceSyncTable<T>({ table, tableName, withTransaction, state, 
     table.bulkUpdate = wrappedBulkUpdate;
     table.bulkDelete = wrappedBulkDelete;
     table.clear = wrappedClear;
+
+    // Wrap collection-returning methods so that modify() and delete() on
+    // any derived collection are also sync-aware.
+    const originalWhere = table.where.bind(table);
+    const originalOrderBy = table.orderBy.bind(table);
+    const originalReverse = table.reverse.bind(table);
+    const originalOffset = table.offset.bind(table);
+    const originalLimit = table.limit.bind(table);
+    const originalJsFilter = table.jsFilter.bind(table);
+
+    table.where = (index: string) => new SyncAwareWhereClause(originalWhere(index), table);
+    table.orderBy = (index: string | string[]) => new SyncAwareCollection(originalOrderBy(index), table);
+    table.reverse = () => new SyncAwareCollection(originalReverse(), table);
+    table.offset = (n: number) => new SyncAwareCollection(originalOffset(n), table);
+    table.limit = (n: number) => new SyncAwareCollection(originalLimit(n), table);
+    table.jsFilter = (predicate: (item: T & SyncedRecord) => boolean) => new SyncAwareCollection(originalJsFilter(predicate), table);
 
     enhancedTables.add(tableName);
 }
