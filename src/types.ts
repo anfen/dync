@@ -62,6 +62,7 @@ export interface BatchPushResult {
     id?: any;
     // Server-assigned updated_at (for successful adds/updates)
     updated_at?: string;
+    // Server-assigned transient error - client will retry push
     error?: string;
 }
 

@@ -261,8 +261,15 @@ async function processBatchPushResult(change: PendingChange, result: BatchPushRe
 
     if (!result.success) {
         if (action === SyncAction.Update) {
-            // Update failed - might be missing remote record
-            await handleMissingRemoteRecord(change, ctx);
+            if (!result.error) {
+                // Explicit "not found" from the server (api.update returned false, no error message).
+                // Matches per-table behaviour where api.update() returning false triggers this path.
+                await handleMissingRemoteRecord(change, ctx);
+            } else {
+                // Transient error on the server — leave the pending change in place so the next sync cycle retries,
+                // matching per-table behaviour.
+                ctx.logger.warn(`[dync] push:batch:update-failed tableName=${tableName} localId=${localId} error=${result.error}`);
+            }
         } else {
             ctx.logger.warn(`[dync] push:batch:failed tableName=${tableName} localId=${localId} error=${result.error}`);
         }
@@ -271,11 +278,11 @@ async function processBatchPushResult(change: PendingChange, result: BatchPushRe
 
     switch (action) {
         case SyncAction.Remove:
-            handleRemoveSuccess(change, ctx);
+            await handleRemoveSuccess(change, ctx);
             break;
 
         case SyncAction.Update:
-            handleUpdateSuccess(change, ctx);
+            await handleUpdateSuccess(change, ctx);
             break;
 
         case SyncAction.Create: {
